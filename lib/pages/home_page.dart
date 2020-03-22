@@ -1,10 +1,12 @@
+import 'package:flutter_downloader/flutter_downloader.dart';
 import 'dart:async';
-
+import 'dart:io';
 import 'package:fluster/fluster.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_google_maps_clusters/helpers/map_marker.dart';
-import 'package:flutter_google_maps_clusters/helpers/map_helper.dart';
+import 'package:covid_19_brasil/helpers/map_marker.dart';
+import 'package:covid_19_brasil/helpers/map_helper.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:path_provider/path_provider.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -27,7 +29,7 @@ class _HomePageState extends State<HomePage> {
   Fluster<MapMarker> _clusterManager;
 
   /// Current map zoom. Initial zoom will be 15, street level
-  double _currentZoom = 15;
+  double _currentZoom = 5;
 
   /// Map loading flag
   bool _isMapLoading = true;
@@ -36,57 +38,72 @@ class _HomePageState extends State<HomePage> {
   bool _areMarkersLoading = true;
 
   /// Url image used on normal markers
-  final String _markerImageUrl =
-      'https://img.icons8.com/office/80/000000/marker.png';
+  final String _markerImageUrl = 'https://img.icons8.com/office/80/000000/marker.png';
 
   /// Color of the cluster circle
-  final Color _clusterColor = Colors.blue;
+  final Color _clusterColor = Colors.red;
 
   /// Color of the cluster text
   final Color _clusterTextColor = Colors.white;
 
-  /// Example marker coordinates
-  final List<LatLng> _markerLocations = [
-    LatLng(41.147125, -8.611249),
-    LatLng(41.145599, -8.610691),
-    LatLng(41.145645, -8.614761),
-    LatLng(41.146775, -8.614913),
-    LatLng(41.146982, -8.615682),
-    LatLng(41.140558, -8.611530),
-    LatLng(41.138393, -8.608642),
-    LatLng(41.137860, -8.609211),
-    LatLng(41.138344, -8.611236),
-    LatLng(41.139813, -8.609381),
-  ];
+  final List<MapMarker> markers = [];
 
   /// Called when the Google Map widget is created. Updates the map loading state
   /// and inits the markers.
-  void _onMapCreated(GoogleMapController controller) {
+  void _onMapCreated(GoogleMapController controller) async {
     _mapController.complete(controller);
 
     setState(() {
       _isMapLoading = false;
     });
 
-    _initMarkers();
+    await FlutterDownloader.initialize();
+     _requestDownload('https://raw.githubusercontent.com/wcota/covid19br/master/cases-gps.csv', 'cases-gps.csv');
   }
 
-  /// Inits [Fluster] and all the markers with network images and updates the loading state.
-  void _initMarkers() async {
-    final List<MapMarker> markers = [];
+  void _requestDownload(link, filename) async{
+    var dir = await getExternalStorageDirectory();
+    await FlutterDownloader.enqueue(
+        url: link,
+        savedDir: dir.path,
+        showNotification: true,
+        openFileFromNotification: true).then((result){
+          _fileToString(filename);
+        });
+  }
 
-    for (LatLng markerLocation in _markerLocations) {
-      final BitmapDescriptor markerImage =
-          await MapHelper.getMarkerImageFromUrl(_markerImageUrl);
+  void _fileToString(filename) async{
+    var dir = await getExternalStorageDirectory();
+    var full_path = dir.path + "/" + filename;
+    File file = new File(full_path);
+    String text = await file.readAsString();
+    _createMarkers(text);
+  }
 
-      markers.add(
-        MapMarker(
-          id: _markerLocations.indexOf(markerLocation).toString(),
-          position: markerLocation,
-          icon: markerImage,
-        ),
-      );
-    }
+  void _createMarkers(txt) async{
+    final BitmapDescriptor markerImage = await MapHelper.getMarkerImageFromUrl(_markerImageUrl);
+    var rows = txt.split("\n");
+
+    var count = 1;
+
+    rows.forEach((str_row){
+      if(str_row == "") return false;
+      if(count > 1){
+        var city = str_row.split(",");
+        LatLng markerLocation = LatLng(double.parse(city[2].toString()), double.parse(city[3].toString()));
+        InfoWindow info = new InfoWindow(title: city[1], snippet: 'Total: ' + city[4]);
+
+        markers.add(
+          MapMarker(
+            id: count.toString(),
+            position: markerLocation,
+            icon: markerImage,
+            infoWindow: info
+          ),
+        );
+      }
+      count++;
+    });
 
     _clusterManager = await MapHelper.initClusterManager(
       markers,
@@ -94,7 +111,7 @@ class _HomePageState extends State<HomePage> {
       _maxClusterZoom,
     );
 
-    await _updateMarkers();
+    _updateMarkers();
   }
 
   /// Gets the markers and clusters to be displayed on the map for the current zoom level and
@@ -131,7 +148,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Markers and Clusters Example'),
+        title: Text('Mapa - Coronavírus no Brasil'),
       ),
       body: Stack(
         children: <Widget>[
@@ -141,7 +158,7 @@ class _HomePageState extends State<HomePage> {
             child: GoogleMap(
               mapToolbarEnabled: false,
               initialCameraPosition: CameraPosition(
-                target: LatLng(41.143029, -8.611274),
+                target: LatLng(-17.2660996, -51.0877282),
                 zoom: _currentZoom,
               ),
               markers: _markers,

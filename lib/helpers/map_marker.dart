@@ -12,6 +12,7 @@ class MapMarker extends Clusterable {
   final String id;
   final LatLng position;
   BitmapDescriptor icon;
+  InfoWindow infoWindow;
 
   MapMarker({
     @required this.id,
@@ -21,6 +22,7 @@ class MapMarker extends Clusterable {
     clusterId,
     pointsSize,
     childMarkerId,
+    this.infoWindow,
   }) : super(
           markerId: id,
           latitude: position.latitude,
@@ -38,5 +40,6 @@ class MapMarker extends Clusterable {
           position.longitude,
         ),
         icon: icon,
+        infoWindow: infoWindow
       );
 }

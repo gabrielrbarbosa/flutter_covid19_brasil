@@ -1,21 +1,16 @@
-# Marker Clustering and Marker Network Image Icons on [Flutter](https://flutter.dev/) Google Maps
+This repository is based on "flutter_google_maps_clusters" and its data is from https://github.com/wcota/covid19br.
+This website also shows detailed info about covid-19 in Brazil - https://wcota.me/covid19br
+Using flutter I think users can have a better usability in mobile.
 
-This example project serves as a companion to the [Use Network Images as Marker Icons on Flutter Google Maps](https://coletiv.com/blog/use-network-images-as-marker-icons-flutter-google-maps/), [How to Cluster Markers on Flutter using Google Maps](https://coletiv.com/blog/how-to-cluster-markers-on-google-maps-using-flutter/) and [Customize Your Cluster Markers on Flutter Google Maps](https://coletiv.com/blog/customize-your-cluster-markers-on-flutter-google-maps/) blog posts.
+HOW TO USE:
+1. Clone or download this repository
+2. Run flutter pub get / flutter create .
+3. Change Google Maps API_KEY on AndroidManifest.xml or info.plist for iOS.
+4. Run project and test it.
 
-It shows how to get an image from an url and use it as a marker icon and how to cluster markers on [Google Maps For Flutter](https://pub.dev/packages/google_maps_flutter).
+TODO:
+- Show confirmed, active, recovered and deaths
+- Group numbers by state (now it's showing by cities)
+- External link to bing.com/covid for global map
 
-Those features aren't yet supported by the official Google Maps package.
-
-Follow these issues to get updates and add thumbs up to try to get more attention to them:
-- Allow markers to be made Flutter widgets: [Issue](https://github.com/flutter/flutter/issues/24213)
-- Support marker clustering: [Issue](https://github.com/flutter/flutter/issues/26863)
-
-Also, don't forget to check the [Flutter Cache Manager](https://pub.dev/packages/flutter_cache_manager) and [Fluster](https://pub.dev/packages/fluster) packages that were used to make this project possible.
-
-## Getting Started
-
-1 - Get started with Flutter by following this [link](https://flutter.dev/docs/get-started/install).
-
-2 - Obtain the Google Maps Api key [here](https://developers.google.com/maps/documentation/android-sdk/get-api-key#get-the-api-key) and add it [here](https://github.com/coletiv/flutter_google_maps_clusters/blob/48a079466dbeeb1673bdcac38ac98cbe76fbd375/android/app/src/main/AndroidManifest.xml#L28) and [here](https://github.com/coletiv/flutter_google_maps_clusters/blob/48a079466dbeeb1673bdcac38ac98cbe76fbd375/ios/Runner/AppDelegate.swift#L12).
-
-3 - Run project and see the custom marker icons and cluster working with Google Maps.
+*Requests using httpClient didn't get full csv file for some reason, so I'm using flutter_downloader to store the file locally and read it.

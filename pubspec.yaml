@@ -1,5 +1,5 @@
-name: flutter_google_maps_clusters
-description: An example showing how to cluster markers on Google Maps.
+name: covid_19_brasil
+description: Mapa para análise de casos do Coronavírus no Brasil
 
 version: 1.0.0+1
 
@@ -21,6 +21,10 @@ dependencies:
 
   # Cache manager
   flutter_cache_manager: ^1.1.1
+
+  path_provider: ^1.6.5
+
+  flutter_downloader: ^1.4.1
 
 dev_dependencies:
   flutter_test:
