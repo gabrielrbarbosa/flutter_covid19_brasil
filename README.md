@@ -13,4 +13,5 @@ TODO:
 - Group numbers by state (now it's showing by cities)
 - External link to bing.com/covid for global map
 
-*Requests using httpClient didn't get full csv file for some reason, so I'm using flutter_downloader to store the file locally and read it.
+* Known bug: Locations are loading only after the second time the app is opened
+* Requests using httpClient didn't get full csv file for some reason, so I'm using flutter_downloader to store the file locally and read it.
