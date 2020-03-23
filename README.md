@@ -2,7 +2,7 @@ This repository is based on "flutter_google_maps_clusters" and its data is from 
 This website also shows detailed info about covid-19 in Brazil - https://wcota.me/covid19br
 Using flutter I think users can have a better usability in mobile.
 
-![App COVID-19 Brasil](https://imgur.com/pknhu63)
+![App COVID-19 Brasil](https://imgur.com/pknhu63.jpg)
 
 
 HOW TO USE:
