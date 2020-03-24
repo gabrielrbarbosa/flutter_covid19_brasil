@@ -18,7 +18,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin {
   final Completer<GoogleMapController> _mapController = Completer();
   
-  // Load tab only once
+  // Load page only once
   @override
   bool get wantKeepAlive => true;
 
@@ -63,25 +63,26 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
       _isMapLoading = false;
     });
 
-     _requestDownload('https://raw.githubusercontent.com/wcota/covid19br/master/cases-gps.csv', 'cases-gps.csv');
+     _requestDownload('https://raw.githubusercontent.com/wcota/covid19br/master/cases-gps.csv');
   }
 
-  void _requestDownload(link, filename) async{
+  void _requestDownload(link) async{
     var dir = await getExternalStorageDirectory();
     await FlutterDownloader.enqueue(
-        url: link,
-        savedDir: dir.path,
-        showNotification: false,
-        openFileFromNotification: false).then((result){
-          sleep(Duration(seconds:1)); // File was not found without timeout
-          _fileToString(filename);
-        });
+      url: link,
+      savedDir: dir.path,
+      showNotification: false,
+      openFileFromNotification: false
+    ).then((result){
+      sleep(Duration(seconds: 1)); // File was not found without timeout
+      _fileToString('cases-gps.csv');
+    });
   }
 
   void _fileToString(filename) async{
     var dir = await getExternalStorageDirectory();
-    var full_path = dir.path + "/" + filename;
-    File file = new File(full_path);
+    var fullPath = dir.path + "/" + filename;
+    File file = new File(fullPath);
     String text = await file.readAsString();
     _createMarkers(text);
   }
@@ -92,10 +93,10 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
 
     var count = 1;
 
-    rows.forEach((str_row){
-      if(str_row == "") return false;
+    rows.forEach((strRow){
+      if(strRow == "") return false;
       if(count > 1){
-        var city = str_row.split(",");
+        var city = strRow.split(",");
         LatLng markerLocation = LatLng(double.parse(city[2].toString()), double.parse(city[3].toString()));
         InfoWindow info = new InfoWindow(title: city[1], snippet: 'Total: ' + city[4]);
 
@@ -109,6 +110,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
         );
       }
       count++;
+      return true;
     });
 
     _clusterManager = await MapHelper.initClusterManager(

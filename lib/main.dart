@@ -1,9 +1,17 @@
+import 'package:covid_19_brasil/pages/charts_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:covid_19_brasil/pages/home_page.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 
-void main() => runApp(MainPage());
+void main() {
+  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+    systemNavigationBarColor: Colors.blue, // navigation bar color
+    statusBarColor: Colors.blue, // status bar color
+  ));
+  runApp(MainPage());
+}
 
 class DrawerItem {
   String title;
@@ -14,7 +22,8 @@ class DrawerItem {
 class MainPage extends StatefulWidget {  
   final drawerItems = [
     new DrawerItem("Cidades", Icons.location_on),
-    new DrawerItem("Estados", Icons.location_searching)
+    new DrawerItem("Estados", Icons.location_searching),
+    new DrawerItem("Gráficos", Icons.insert_chart)
     //new DrawerItem("Países", Icons.map)
   ];
   @override
@@ -26,6 +35,8 @@ class MainPage extends StatefulWidget {
 class _MainPage extends State<MainPage> {
    int _selectedDrawerIndex = 0;
    int flag = 0;
+
+   GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
 
   _loadFlutterDownloader() async{
     await FlutterDownloader.initialize();
@@ -48,12 +59,7 @@ class _MainPage extends State<MainPage> {
           )
         );
       case 2:
-        return Container(
-          child: WebView(
-            initialUrl: Uri.dataFromString('<html><body style="margin: 0; padding: 0;"><iframe style="width:100%;height:100%" src="https://bing.com/covid"></iframe></body></html>', mimeType: 'text/html').toString(),
-            javascriptMode: JavascriptMode.unrestricted,
-          )
-        );
+        return new ChartsPage();
       default:
         return new Text("Error");
     }
@@ -61,8 +67,13 @@ class _MainPage extends State<MainPage> {
 
   _onSelectItem(int index) {
     setState(() => _selectedDrawerIndex = index);
-    Navigator.of(context).pop(); // close the drawer
+     if (_scaffoldKey.currentState.isEndDrawerOpen) {
+        _scaffoldKey.currentState.openDrawer();
+      } else {
+        _scaffoldKey.currentState.openEndDrawer();
+      }
   }
+
   @override
   Widget build(BuildContext context) {
   var drawerOptions = <Widget>[];
@@ -80,20 +91,23 @@ class _MainPage extends State<MainPage> {
 
     return MaterialApp(
       home: Scaffold(
-      appBar: new AppBar(
-        title: new Text(widget.drawerItems[_selectedDrawerIndex].title),
-      ),
-      drawer: new Drawer(
-        child: new Column(
-          children: <Widget>[
-            new UserAccountsDrawerHeader(
-                accountName: new Text("Informações do Coronavírus no Brasil"), accountEmail: null),
-            new Column(children: drawerOptions)
-          ],
+        key: _scaffoldKey,
+        appBar: new AppBar(
+          title: new Text(widget.drawerItems[_selectedDrawerIndex].title),
+          backgroundColor: Colors.blue,
+          brightness: Brightness.light
         ),
+        drawer: new Drawer(
+          child: new Column(
+            children: <Widget>[
+              new UserAccountsDrawerHeader(
+                  accountName: new Text("Informações do Coronavírus no Brasil"), accountEmail: null),
+              new Column(children: drawerOptions)
+            ],
+          ),
+        ),
+        body: _getDrawerItemWidget(_selectedDrawerIndex),
       ),
-      body: _getDrawerItemWidget(_selectedDrawerIndex),
-    ),
     );
   }
 }

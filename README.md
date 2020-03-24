@@ -14,8 +14,7 @@ HOW TO USE:
 
 TODO:
 - Show confirmed, active, recovered and deaths
-- Group numbers by state (now it's showing by cities)
-- External link to bing.com/covid for global map
+- Convert chart Y from double to int
 
 * Requests using httpClient didn't get full csv file for some reason, so I'm using flutter_downloader to store the file locally and read it.
 
