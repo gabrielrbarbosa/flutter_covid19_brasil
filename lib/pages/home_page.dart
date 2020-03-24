@@ -7,29 +7,35 @@ import 'package:covid_19_brasil/helpers/map_marker.dart';
 import 'package:covid_19_brasil/helpers/map_helper.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 
 class HomePage extends StatefulWidget {
   @override
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin {
   final Completer<GoogleMapController> _mapController = Completer();
+  
+  // Load tab only once
+  @override
+  bool get wantKeepAlive => true;
 
   /// Set of displayed markers and cluster markers on the map
   final Set<Marker> _markers = Set();
 
   /// Minimum zoom at which the markers will cluster
-  final int _minClusterZoom = 0;
+  final int _minClusterZoom = 4;
 
   /// Maximum zoom at which the markers will cluster
-  final int _maxClusterZoom = 19;
+  final int _maxClusterZoom = 12;
 
   /// [Fluster] instance used to manage the clusters
   Fluster<MapMarker> _clusterManager;
 
-  /// Current map zoom. Initial zoom will be 15, street level
-  double _currentZoom = 5;
+  /// Current map zoom
+  double _currentZoom = 4;
 
   /// Map loading flag
   bool _isMapLoading = true;
@@ -57,7 +63,6 @@ class _HomePageState extends State<HomePage> {
       _isMapLoading = false;
     });
 
-    await FlutterDownloader.initialize();
      _requestDownload('https://raw.githubusercontent.com/wcota/covid19br/master/cases-gps.csv', 'cases-gps.csv');
   }
 
@@ -66,8 +71,9 @@ class _HomePageState extends State<HomePage> {
     await FlutterDownloader.enqueue(
         url: link,
         savedDir: dir.path,
-        showNotification: true,
-        openFileFromNotification: true).then((result){
+        showNotification: false,
+        openFileFromNotification: false).then((result){
+          sleep(Duration(seconds:1)); // File was not found without timeout
           _fileToString(filename);
         });
   }
@@ -147,9 +153,6 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Mapa - Coronavírus no Brasil'),
-      ),
       body: Stack(
         children: <Widget>[
           // Google Map widget
@@ -164,6 +167,10 @@ class _HomePageState extends State<HomePage> {
               markers: _markers,
               onMapCreated: (controller) => _onMapCreated(controller),
               onCameraMove: (position) => _updateMarkers(position.zoom),
+              gestureRecognizers: Set()
+              ..add(Factory<PanGestureRecognizer>(() => PanGestureRecognizer()))
+              ..add(Factory<VerticalDragGestureRecognizer>(
+                  () => VerticalDragGestureRecognizer())),
             ),
           ),
 
@@ -185,7 +192,7 @@ class _HomePageState extends State<HomePage> {
                   child: Padding(
                     padding: const EdgeInsets.all(4),
                     child: Text(
-                      'Loading',
+                      'Carregando...',
                       style: TextStyle(color: Colors.white),
                     ),
                   ),

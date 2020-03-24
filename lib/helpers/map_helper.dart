@@ -133,9 +133,9 @@ class MapHelper {
     return Fluster<MapMarker>(
       minZoom: minZoom,
       maxZoom: maxZoom,
-      radius: 150,
-      extent: 2048,
-      nodeSize: 64,
+      radius: 500,
+      extent: 4096,
+      nodeSize: 16,
       points: markers,
       createCluster: (
         BaseCluster cluster,

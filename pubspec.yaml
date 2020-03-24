@@ -26,9 +26,17 @@ dependencies:
 
   flutter_downloader: ^1.4.1
 
+  webview_flutter: ^0.3.19+9
+
+  flutter_launcher_icons: ^0.7.4
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
+flutter_icons:
+  image_path: "icon/icon.png" 
+  android: true
 
 flutter:
   uses-material-design: true
