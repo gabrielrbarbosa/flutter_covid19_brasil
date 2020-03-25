@@ -21,9 +21,9 @@ class DrawerItem {
 
 class MainPage extends StatefulWidget {  
   final drawerItems = [
-    new DrawerItem("Cidades", Icons.location_on),
-    new DrawerItem("Estados", Icons.location_searching),
-    new DrawerItem("Gráficos", Icons.insert_chart)
+    new DrawerItem("Mapa por Cidades", Icons.location_on),
+    new DrawerItem("Mapa por Estados", Icons.map),
+    new DrawerItem("Estatísticas", Icons.insert_chart)
     //new DrawerItem("Países", Icons.map)
   ];
   @override

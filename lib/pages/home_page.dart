@@ -1,6 +1,7 @@
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'dart:async';
 import 'dart:io';
+import 'dart:convert';
 import 'package:fluster/fluster.dart';
 import 'package:flutter/material.dart';
 import 'package:covid_19_brasil/helpers/map_marker.dart';
@@ -9,6 +10,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
+import 'package:http/http.dart' as http;
 
 class HomePage extends StatefulWidget {
   @override
@@ -54,6 +56,31 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
 
   final List<MapMarker> markers = [];
 
+  Map<String, dynamic> _countryInfo = {'cases': '0', 'active': '0', 'recovered': '0', 'deaths': '0'};
+  String get info => 'Total de Casos: ' + _countryInfo["cases"].toString() + 
+                      '\nCasos Ativos: ' + _countryInfo['active'].toString() +
+                      '\nCasos Recuperados: ' + _countryInfo['recovered'].toString() +
+                      '\nCasos Fatais: ' + _countryInfo['deaths'].toString();
+
+  fetchData(country) async {
+    final response =
+      await http.get('https://corona.lmao.ninja/countries/' + country);
+
+    if (response.statusCode == 200) {
+      var jsonResponse = json.decode(response.body);
+      _countryInfo['cases'] = jsonResponse['cases'];
+      _countryInfo['active'] = jsonResponse['active'];
+      _countryInfo['recovered'] = jsonResponse['recovered'];
+      _countryInfo['deaths'] = jsonResponse['deaths'];
+
+      setState(() {
+        _countryInfo = _countryInfo;
+      });
+    } else {
+      throw Exception('Erro ao carregar informações.');
+    }
+  }
+
   /// Called when the Google Map widget is created. Updates the map loading state
   /// and inits the markers.
   void _onMapCreated(GoogleMapController controller) async {
@@ -63,6 +90,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
       _isMapLoading = false;
     });
 
+    fetchData('brazil');
      _requestDownload('https://raw.githubusercontent.com/wcota/covid19br/master/cases-gps.csv');
   }
 
@@ -163,7 +191,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
             child: GoogleMap(
               mapToolbarEnabled: false,
               initialCameraPosition: CameraPosition(
-                target: LatLng(-17.2660996, -51.0877282),
+                target: LatLng(-18.2679862, -50.6720566),
                 zoom: _currentZoom,
               ),
               markers: _markers,
@@ -187,7 +215,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Align(
-                alignment: Alignment.topCenter,
+                alignment: Alignment.bottomCenter,
                 child: Card(
                   elevation: 2,
                   color: Colors.grey.withOpacity(0.9),
@@ -195,6 +223,23 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
                     padding: const EdgeInsets.all(4),
                     child: Text(
                       'Carregando...',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Align(
+                alignment: Alignment.topRight,
+                child: Card(
+                  elevation: 2,
+                  color: Colors.blue[300].withOpacity(0.9),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Text(
+                      info,
                       style: TextStyle(color: Colors.white),
                     ),
                   ),
