@@ -91,8 +91,8 @@ class _ChartsPageState extends State<ChartsPage> with AutomaticKeepAliveClientMi
         if(info[3] == _selectedLocation || (info[3] == "TOTAL" && _selectedLocation == "Brasil")){
 
           String date = info[0].toString();
-          totalCases[DateTime.parse(date)] = double.parse(info[5]);
-          newCases[DateTime.parse(date)] = double.parse(info[4]);
+          totalCases[DateTime.parse(date)] = double.parse(info[6]);
+          newCases[DateTime.parse(date)] = double.parse(info[5]);
           return true;
         } else{
           return false;
