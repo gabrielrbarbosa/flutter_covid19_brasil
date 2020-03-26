@@ -2,14 +2,9 @@ import 'package:flutter_downloader/flutter_downloader.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
-import 'package:fluster/fluster.dart';
 import 'package:flutter/material.dart';
-import 'package:covid_19_brasil/helpers/map_marker.dart';
-import 'package:covid_19_brasil/helpers/map_helper.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
 import 'package:http/http.dart' as http;
 
 class HomePage extends StatefulWidget {
@@ -25,47 +20,23 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
   bool get wantKeepAlive => true;
 
   /// Set of displayed markers and cluster markers on the map
-  final Set<Marker> _markers = Set();
-
-  /// Minimum zoom at which the markers will cluster
-  final int _minClusterZoom = 4;
-
-  /// Maximum zoom at which the markers will cluster
-  final int _maxClusterZoom = 12;
-
-  /// [Fluster] instance used to manage the clusters
-  Fluster<MapMarker> _clusterManager;
-
-  /// Current map zoom
+  List<Marker> markers = <Marker>[];
   double _currentZoom = 4;
 
   /// Map loading flag
   bool _isMapLoading = true;
-
-  /// Markers loading flag
   bool _areMarkersLoading = true;
-
-  /// Url image used on normal markers
-  final String _markerImageUrl = 'https://img.icons8.com/office/80/000000/marker.png';
-
-  /// Color of the cluster circle
-  final Color _clusterColor = Colors.red;
-
-  /// Color of the cluster text
-  final Color _clusterTextColor = Colors.white;
-
-  final List<MapMarker> markers = [];
+  BitmapDescriptor bitmapIcon;
 
   Map<String, dynamic> _countryInfo = {'cases': '0', 'active': '0', 'recovered': '0', 'deaths': '0'};
-  String get info => 'Total de Casos: ' + _countryInfo["cases"].toString() + 
-                      '\nCasos Ativos: ' + _countryInfo['active'].toString() +
-                      '\nCasos Recuperados: ' + _countryInfo['recovered'].toString() +
-                      '\nCasos Fatais: ' + _countryInfo['deaths'].toString();
+  String get info => 'Total: ' + _countryInfo["cases"].toString() + 
+                      '\nAtivos: ' + _countryInfo['active'].toString() +
+                      '\nRecuperados: ' + _countryInfo['recovered'].toString() +
+                      '\nFatais: ' + _countryInfo['deaths'].toString();
 
   fetchData(country) async {
-    final response =
-      await http.get('https://corona.lmao.ninja/countries/' + country);
-
+    final response = await http.get('https://corona.lmao.ninja/countries/' + country);
+    
     if (response.statusCode == 200) {
       var jsonResponse = json.decode(response.body);
       _countryInfo['cases'] = jsonResponse['cases'];
@@ -81,17 +52,22 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
     }
   }
 
-  /// Called when the Google Map widget is created. Updates the map loading state
-  /// and inits the markers.
+  /// Called when the Google Map widget is created. Updates the map loading state and inits the markers.
   void _onMapCreated(GoogleMapController controller) async {
+     BitmapDescriptor.fromAssetImage(ImageConfiguration(size: Size(64, 64)),
+        'assets/images/pin-city.png')
+    .then((d) {
+      bitmapIcon = d;
+    });
+    
     _mapController.complete(controller);
 
-    setState(() {
+    fetchData('brazil');
+    _requestDownload('https://raw.githubusercontent.com/wcota/covid19br/master/cases-gps.csv');
+
+     setState(() {
       _isMapLoading = false;
     });
-
-    fetchData('brazil');
-     _requestDownload('https://raw.githubusercontent.com/wcota/covid19br/master/cases-gps.csv');
   }
 
   void _requestDownload(link) async{
@@ -116,7 +92,6 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
   }
 
   void _createMarkers(txt) async{
-    final BitmapDescriptor markerImage = await MapHelper.getMarkerImageFromUrl(_markerImageUrl);
     var rows = txt.split("\n");
 
     var count = 1;
@@ -127,56 +102,24 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
         var city = strRow.split(",");
         LatLng markerLocation = LatLng(double.parse(city[2].toString()), double.parse(city[3].toString()));
         InfoWindow info = new InfoWindow(title: city[1], snippet: 'Total: ' + city[4]);
-
+        MarkerId markerId = MarkerId((count-1).toString());
+        
         markers.add(
-          MapMarker(
-            id: count.toString(),
+          Marker(
+            markerId: markerId,
             position: markerLocation,
-            icon: markerImage,
-            infoWindow: info
+            infoWindow: info,
+            icon: bitmapIcon
           ),
         );
+        
+        setState(() {
+          markers = markers;
+          if(count == rows.length / 2) _areMarkersLoading = false;
+        });
       }
       count++;
       return true;
-    });
-
-    _clusterManager = await MapHelper.initClusterManager(
-      markers,
-      _minClusterZoom,
-      _maxClusterZoom,
-    );
-
-    _updateMarkers();
-  }
-
-  /// Gets the markers and clusters to be displayed on the map for the current zoom level and
-  /// updates state.
-  Future<void> _updateMarkers([double updatedZoom]) async {
-    if (_clusterManager == null || updatedZoom == _currentZoom) return;
-
-    if (updatedZoom != null) {
-      _currentZoom = updatedZoom;
-    }
-
-    setState(() {
-      _areMarkersLoading = true;
-    });
-
-    final updatedMarkers = await MapHelper.getClusterMarkers(
-      _clusterManager,
-      _currentZoom,
-      _clusterColor,
-      _clusterTextColor,
-      80,
-    );
-
-    _markers
-      ..clear()
-      ..addAll(updatedMarkers);
-
-    setState(() {
-      _areMarkersLoading = false;
     });
   }
 
@@ -194,13 +137,8 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
                 target: LatLng(-18.2679862, -50.6720566),
                 zoom: _currentZoom,
               ),
-              markers: _markers,
-              onMapCreated: (controller) => _onMapCreated(controller),
-              onCameraMove: (position) => _updateMarkers(position.zoom),
-              gestureRecognizers: Set()
-              ..add(Factory<PanGestureRecognizer>(() => PanGestureRecognizer()))
-              ..add(Factory<VerticalDragGestureRecognizer>(
-                  () => VerticalDragGestureRecognizer())),
+              markers: Set<Marker>.of(markers),
+              onMapCreated: (controller) => _onMapCreated(controller)
             ),
           ),
 
@@ -240,7 +178,8 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
                     padding: const EdgeInsets.all(4),
                     child: Text(
                       info,
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(color: Colors.white,
+                      fontSize: 16),
                     ),
                   ),
                 ),
