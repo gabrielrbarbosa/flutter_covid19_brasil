@@ -119,7 +119,10 @@ class _ChartsPageState extends State<ChartsPage> with AutomaticKeepAliveClientMi
     } 
 
     return Scaffold(
-      body: Container(
+      body: 
+      SafeArea(
+        child:
+        Container(
         child: Column(
             mainAxisSize: MainAxisSize.max,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -201,6 +204,7 @@ class _ChartsPageState extends State<ChartsPage> with AutomaticKeepAliveClientMi
               ),
             ]),
       ),
+    ),
     );
   }
 }

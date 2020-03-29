@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
+import '../states.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -21,12 +22,12 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
 
   /// Set of displayed markers and cluster markers on the map
   List<Marker> markers = <Marker>[];
-  double _currentZoom = 4;
+  double _currentZoom = 6;
 
   /// Map loading flag
   bool _isMapLoading = true;
   bool _areMarkersLoading = true;
-  BitmapDescriptor bitmapIcon;
+  BitmapDescriptor bitmapIconCity, bitmapIconState;
 
   Map<String, dynamic> _countryInfo = {'cases': '0', 'active': '0', 'recovered': '0', 'deaths': '0'};
   String get info => 'Total: ' + _countryInfo["cases"].toString() + 
@@ -57,20 +58,26 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
      BitmapDescriptor.fromAssetImage(ImageConfiguration(size: Size(64, 64)),
         'assets/images/pin-city.png')
     .then((d) {
-      bitmapIcon = d;
+      bitmapIconCity = d;
+    });
+    BitmapDescriptor.fromAssetImage(ImageConfiguration(size: Size(64, 64)),
+        'assets/images/pin-state.png')
+    .then((d) {
+      bitmapIconState = d;
     });
     
     _mapController.complete(controller);
 
     fetchData('brazil');
-    _requestDownload('https://raw.githubusercontent.com/wcota/covid19br/master/cases-gps.csv');
+    _requestDownload('https://raw.githubusercontent.com/wcota/covid19br/master/cases-gps.csv', 'cases-gps.csv');
+    _requestDownload('https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-total.csv', 'cases-brazil-total.csv');
 
      setState(() {
       _isMapLoading = false;
     });
   }
 
-  void _requestDownload(link) async{
+  void _requestDownload(link, filename) async{
     var dir = await getExternalStorageDirectory();
     await FlutterDownloader.enqueue(
       url: link,
@@ -78,8 +85,8 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
       showNotification: false,
       openFileFromNotification: false
     ).then((result){
-      sleep(Duration(seconds: 1)); // File was not found without timeout
-      _fileToString('cases-gps.csv');
+      sleep(Duration(milliseconds: 300)); // File was not found without timeout
+      _fileToString(filename);
     });
   }
 
@@ -88,39 +95,71 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
     var fullPath = dir.path + "/" + filename;
     File file = new File(fullPath);
     String text = await file.readAsString();
-    _createMarkers(text);
+    _createMarkers(text, filename);
   }
 
-  void _createMarkers(txt) async{
+  void _createMarkers(txt, filename) async{
     var rows = txt.split("\n");
 
-    var count = 1;
-
-    rows.forEach((strRow){
-      if(strRow == "") return false;
-      if(count > 1){
-        var city = strRow.split(",");
-        LatLng markerLocation = LatLng(double.parse(city[2].toString()), double.parse(city[3].toString()));
-        InfoWindow info = new InfoWindow(title: city[1], snippet: 'Total: ' + city[4]);
-        MarkerId markerId = MarkerId((count-1).toString());
-        
-        markers.add(
-          Marker(
-            markerId: markerId,
-            position: markerLocation,
-            infoWindow: info,
-            icon: bitmapIcon
-          ),
-        );
-        
-        setState(() {
-          markers = markers;
-          if(count == rows.length / 2) _areMarkersLoading = false;
-        });
-      }
-      count++;
-      return true;
-    });
+    if(filename == 'cases-gps.csv'){
+      var count = 1;
+      rows.forEach((strRow){
+        if(strRow == "") return false;
+        if(count > 1){
+          var city = strRow.split(",");
+          LatLng markerLocation = LatLng(double.parse(city[2].toString()), double.parse(city[3].toString()));
+          InfoWindow info = new InfoWindow(title: city[1], snippet: 'Total: ' + city[4]);
+          MarkerId markerId = MarkerId((count-1).toString());
+          
+          markers.add(
+            Marker(
+              markerId: markerId,
+              position: markerLocation,
+              infoWindow: info,
+              icon: bitmapIconCity
+            ),
+          );
+          
+          setState(() {
+            markers = markers;
+            _areMarkersLoading = false;
+          });
+        }
+        count++;
+        return true;
+      });
+    } 
+    else if(filename == 'cases-brazil-total.csv'){
+      var count = 1;
+      rows.forEach((strRow){
+        if(strRow == "") return false;
+        if(count > 2){
+          var st = strRow.split(",");
+          LatLng markerLocation = LatLng(
+            states[st[1]].latitute, 
+            states[st[1]].longitude
+          );
+          InfoWindow info = new InfoWindow(title: states[st[1]].name, snippet: 'Total: ' + st[2] + ' / Fatais: ' + st[5]);
+          MarkerId markerId = MarkerId(st[1]);
+          
+          markers.add(
+            Marker(
+              markerId: markerId,
+              position: markerLocation,
+              infoWindow: info,
+              icon: bitmapIconState
+            ),
+          );
+          
+          setState(() {
+            markers = markers;
+            _areMarkersLoading = false;
+          });
+        }
+        count++;
+        return true;
+      });
+    }
   }
 
   @override
@@ -130,7 +169,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
         children: <Widget>[
           // Google Map widget
           Opacity(
-            opacity: _isMapLoading ? 0 : 1,
+            opacity: 1,
             child: GoogleMap(
               mapToolbarEnabled: false,
               initialCameraPosition: CameraPosition(
@@ -140,12 +179,6 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
               markers: Set<Marker>.of(markers),
               onMapCreated: (controller) => _onMapCreated(controller)
             ),
-          ),
-
-          // Map loading indicator
-          Opacity(
-            opacity: _isMapLoading ? 1 : 0,
-            child: Center(child: CircularProgressIndicator()),
           ),
 
           // Map markers loading indicator
