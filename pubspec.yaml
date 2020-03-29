@@ -44,3 +44,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/pin-city.png
+    - assets/images/pin-state.png
