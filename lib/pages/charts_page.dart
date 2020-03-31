@@ -18,19 +18,20 @@ class _ChartsPageState extends State<ChartsPage> with AutomaticKeepAliveClientMi
 
   LineChart lineChart;
   int chartIndex = 0;
-  Map<DateTime, double> lineTotalCases = {};
-  Map<DateTime, double> lineNewCases = {};
   bool showChart = false;
-  List<String> _locations = ['Brasil'];
-  String _selectedLocation = 'Brasil';
-  List fileData;
+  Map<DateTime, double> lineTotalCases = {}, lineNewCases = {}, lineFatalCases = {};
+  List<String> _locations = ['País', 'Estados', 'Cidades'];
+  List<String> _locationsStates = [], _locationsRegions = [], _locationsCities = [];
+  String _selectedType = 'País', _selectedRegion = 'TOTAL', _lastSelectedLocation;
+  List fileDataCities, fileDataStates;
 
   void initState() {  
     super.initState();
-    _requestDownload('https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-cities-time.csv');
+    _requestDownload('https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-cities-time.csv', 'cases-brazil-cities-time.csv');
+    _requestDownload('https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-states.csv', 'cases-brazil-states.csv');
   }
 
-  void _requestDownload(link) async{
+  void _requestDownload(link, filename) async{
     var dir = await getExternalStorageDirectory();
     await FlutterDownloader.enqueue(
       url: link,
@@ -39,7 +40,7 @@ class _ChartsPageState extends State<ChartsPage> with AutomaticKeepAliveClientMi
       openFileFromNotification: false
     ).then((result){
        sleep(Duration(seconds: 1)); // File was not found without timeout
-      _fileToString('cases-brazil-cities-time.csv');
+      _fileToString(filename);
     });
   }
 
@@ -48,62 +49,135 @@ class _ChartsPageState extends State<ChartsPage> with AutomaticKeepAliveClientMi
     var fullPath = dir.path + "/" + filename;
     File file = new File(fullPath);
     String text = await file.readAsString();
-    _createChart(text);
+    _createChart(text, filename);
   }
 
-  void _createChart(txt){
-    fileData = txt.split("\n");
+  void _createChart(txt, filename){
+    
+    if(filename == "cases-brazil-cities-time.csv"){
+      fileDataCities = txt.split("\n");
+      List columnTitles = fileDataCities[0].split(",");
+      int count = 1;
 
-    int count = 1;
-    fileData.forEach((strRow){
-      if(strRow == "") return false;
+      fileDataCities.forEach((strRow){
+        if(strRow == "") return false;
 
-      // Get all locations and store in dropdown list
-      if(count > 1){
-        var info = strRow.split(",");
-        if(!_locations.contains(info[3]) && info[3] != "TOTAL"){
-          _locations.add(info[3]);
+        // Get all locations and store in dropdown list
+        if(count > 1){
+          var info = strRow.split(",");
+          if(!_locationsCities.contains(info[columnTitles.indexOf("city")]) && info[columnTitles.indexOf("city")] != "TOTAL"){
+            _locationsCities.add(info[columnTitles.indexOf("city")]);
+          }
         }
-      }
-      count++;
-      _locations.sort((a, b) => a.toString().compareTo(b.toString()));
-      return true;
-    });
+        count++;
+        _locationsCities.sort((a, b) => a.toString().compareTo(b.toString()));
+        return true;
+      });
 
-    setState(() {
-      _locations = _locations;
-    });
+      setState(() {
+        _locationsCities = _locationsCities;
+      });
+    } 
+    else if(filename == "cases-brazil-states.csv"){
+      fileDataStates = txt.split("\n");
+      List columnTitles = fileDataStates[0].split(",");
+      int count = 1;
 
-    updateChartInfo();
+      fileDataStates.forEach((strRow){
+        if(strRow == "") return false;
+
+        if(count > 1){
+          var info = strRow.split(",");
+          if(!_locationsStates.contains(info[columnTitles.indexOf("state")]) && info[columnTitles.indexOf("state")] != "TOTAL"){
+            _locationsStates.add(info[columnTitles.indexOf("state")]);
+          }
+        }
+        count++;
+        _locationsStates.sort((a, b) => a.toString().compareTo(b.toString()));
+        return true;
+      });
+
+      setState(() {
+        _locationsStates = _locationsStates;
+      });
+      updateChartInfo();
+    }
   }
 
   void updateChartInfo(){
-    int count = 1;
-    Map<DateTime, double> totalCases = {};
-    Map<DateTime, double> newCases = {};
+    int count = 1, index;
+    Map<DateTime, double> totalCases = {}, newCases = {}, fatalCases = {};
+    List fileData, columnTitles;
 
+    switch(_selectedType){
+      case 'País':
+        fileData = fileDataStates;
+        columnTitles = fileData[0].split(",");
+        index = columnTitles.indexOf("state");
+        setState(() {
+          if(_locationsRegions != _locationsStates){
+            _locationsRegions = _locationsStates;
+          }
+          if(_lastSelectedLocation != _selectedType){
+            _selectedRegion = 'TOTAL';
+            _lastSelectedLocation = _selectedType;
+          }
+        });
+      break;
+      case 'Estados':
+        fileData = fileDataStates;
+        columnTitles = fileData[0].split(",");
+        index = columnTitles.indexOf("state");
+        setState(() {
+          if(_locationsRegions != _locationsStates){
+            _locationsRegions = _locationsStates;
+          }
+          if(_lastSelectedLocation != _selectedType){
+            _selectedRegion = 'SP';
+            _lastSelectedLocation = _selectedType;
+          }
+        });
+      break;
+      case 'Cidades':
+        fileData = fileDataCities;
+        columnTitles = fileData[0].split(",");
+        index = columnTitles.indexOf("city");
+        
+        setState(() {
+          if(_locationsRegions != _locationsCities){
+            _locationsRegions = _locationsCities;
+            chartIndex = 0;
+          }
+          if(_lastSelectedLocation != _selectedType){
+            _selectedRegion = "Londrina/PR";
+            _lastSelectedLocation = _selectedType;
+          }
+        });
+      break;
+    }
+    // TODO: save in storage these variables so user can open this page already in selected region after opening the app again
+    
     fileData.forEach((strRow){
       if(strRow == "") return false;
 
-      // Get data only from selected region
+      var info = strRow.split(",");
       if(count > 1){
-        var info = strRow.split(",");
-        if(info[3] == _selectedLocation || (info[3] == "TOTAL" && _selectedLocation == "Brasil")){
-
-          String date = info[0].toString();
-          totalCases[DateTime.parse(date)] = double.parse(info[6]);
-          newCases[DateTime.parse(date)] = double.parse(info[5]);
+        if(info[index] == _selectedRegion){
+          String date = info[columnTitles.indexOf('date')].toString();
+          totalCases[DateTime.parse(date)] = double.parse(info[columnTitles.indexOf('totalCases')]);
+          newCases[DateTime.parse(date)] = double.parse(info[columnTitles.indexOf('newCases')]);
+          if(_selectedType != 'Cidades') fatalCases[DateTime.parse(date)] = double.parse(info?.elementAt(columnTitles.indexOf('deaths')));
           return true;
-        } else{
-          return false;
         }
       }
       count++;
+      return false;
     });
 
     setState(() {
       lineTotalCases = totalCases;
       lineNewCases = newCases;
+      lineFatalCases = fatalCases;
       showChart = true;
     });
   }
@@ -113,10 +187,11 @@ class _ChartsPageState extends State<ChartsPage> with AutomaticKeepAliveClientMi
 
     if (chartIndex == 0) {
       lineChart = AreaLineChart.fromDateTimeMaps([lineTotalCases], [Colors.red.shade900], ['CONFIRMADOS'],  gradients: [Pair(Colors.orange, Colors.red.shade700)]);
-      //lineChart = LineChart.fromDateTimeMaps([lineTotalCases], [Colors.red], ['CASOS CONFIRMADOS']);
     } else if (chartIndex == 1) {
       lineChart = LineChart.fromDateTimeMaps([lineNewCases], [Colors.blue], ['NOVOS CASOS']);
-    } 
+    } else if (chartIndex == 2) {
+      lineChart = LineChart.fromDateTimeMaps([lineFatalCases], [Colors.black87], ['CASOS FATAIS']);
+    }
 
     return Scaffold(
       body: 
@@ -136,10 +211,10 @@ class _ChartsPageState extends State<ChartsPage> with AutomaticKeepAliveClientMi
                   children: 
                   <Widget>[ 
                     DropdownButton(
-                      value: _selectedLocation,
+                      value: _selectedType,
                       onChanged: (newValue) {
                         setState(() {
-                          _selectedLocation = newValue;
+                          _selectedType = newValue;
                         });
                         updateChartInfo();
                       },
@@ -149,6 +224,22 @@ class _ChartsPageState extends State<ChartsPage> with AutomaticKeepAliveClientMi
                           value: location,
                         );
                       }).toList(),
+                    ),
+                    if(_selectedType != 'País') (DropdownButton(
+                      value: _selectedRegion,
+                      onChanged: (newValue) {
+                        setState(() {
+                          _selectedRegion = newValue;
+                        });
+                        updateChartInfo();
+                      },
+                      items: _locationsRegions.map((location) {
+                        return DropdownMenuItem(
+                          child: new Text(location),
+                          value: location,
+                        );
+                      }).toList(),
+                    )
                     ),
                   ],
                 ),
@@ -191,6 +282,22 @@ class _ChartsPageState extends State<ChartsPage> with AutomaticKeepAliveClientMi
                         });
                       },
                     ),
+                    if(_selectedType != 'Cidades') FlatButton(
+                      shape: RoundedRectangleBorder(
+                          side: BorderSide(color: Colors.black45),
+                          borderRadius: BorderRadius.all(Radius.circular(3))),
+                      child: Text(
+                        'Casos Fatais',
+                        style: TextStyle(
+                            color:
+                            chartIndex == 2 ? Colors.black : Colors.black12),
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          chartIndex = 2;
+                        });
+                      },
+                    ),
                   ]),
               ),
                 Expanded(
@@ -199,7 +306,14 @@ class _ChartsPageState extends State<ChartsPage> with AutomaticKeepAliveClientMi
                   child: showChart ? AnimatedLineChart(
                     lineChart,
                     key: UniqueKey(), //Unique key to force animations
-                  ) : (Text('Carregando...')), 
+                  ) : 
+                  (Center(
+                      child: Text(
+                        "Carregando os dados...",
+                        textAlign: TextAlign.center,
+                      ),
+                    )
+                  ), 
                 ),
               ),
             ]),

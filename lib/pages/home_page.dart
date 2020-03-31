@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../states.dart';
 
 class HomePage extends StatefulWidget {
@@ -22,20 +23,46 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
 
   /// Set of displayed markers and cluster markers on the map
   List<Marker> markers = <Marker>[];
-  double _currentZoom = 6;
+  double _currentZoom = 4;
 
   /// Map loading flag
   bool _isMapLoading = true;
   bool _areMarkersLoading = true;
+  var delayLoad = 150;
   BitmapDescriptor bitmapIconCity, bitmapIconState;
 
   Map<String, dynamic> _countryInfo = {'cases': '0', 'active': '0', 'recovered': '0', 'deaths': '0'};
   String get info => 'Total: ' + _countryInfo["cases"].toString() + 
                       '\nAtivos: ' + _countryInfo['active'].toString() +
                       '\nRecuperados: ' + _countryInfo['recovered'].toString() +
-                      '\nFatais: ' + _countryInfo['deaths'].toString();
+                      '\nFatais: ' + _countryInfo['deaths'].toString();          
 
-  fetchData(country) async {
+  void initState(){
+    loadPrefs();
+  }
+
+  void loadPrefs() async{
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool _firstAppLoad = (prefs.getBool('firstLoad') ?? true);
+
+    if(_firstAppLoad){
+      delayLoad = 300;
+      prefs.setBool('firstLoad', false);
+    }
+
+    BitmapDescriptor.fromAssetImage(ImageConfiguration(size: Size(64, 64)),
+        'assets/images/pin-city.png')
+    .then((d) {
+      bitmapIconCity = d;
+    });
+    BitmapDescriptor.fromAssetImage(ImageConfiguration(size: Size(64, 64)),
+        'assets/images/pin-state.png')
+    .then((d) {
+      bitmapIconState = d;
+    });
+  }
+
+  fetchData(country) async {      
     final response = await http.get('https://corona.lmao.ninja/countries/' + country);
     
     if (response.statusCode == 200) {
@@ -55,26 +82,11 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
 
   /// Called when the Google Map widget is created. Updates the map loading state and inits the markers.
   void _onMapCreated(GoogleMapController controller) async {
-     BitmapDescriptor.fromAssetImage(ImageConfiguration(size: Size(64, 64)),
-        'assets/images/pin-city.png')
-    .then((d) {
-      bitmapIconCity = d;
-    });
-    BitmapDescriptor.fromAssetImage(ImageConfiguration(size: Size(64, 64)),
-        'assets/images/pin-state.png')
-    .then((d) {
-      bitmapIconState = d;
-    });
-    
     _mapController.complete(controller);
 
     fetchData('brazil');
     _requestDownload('https://raw.githubusercontent.com/wcota/covid19br/master/cases-gps.csv', 'cases-gps.csv');
     _requestDownload('https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-total.csv', 'cases-brazil-total.csv');
-
-     setState(() {
-      _isMapLoading = false;
-    });
   }
 
   void _requestDownload(link, filename) async{
@@ -85,7 +97,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
       showNotification: false,
       openFileFromNotification: false
     ).then((result){
-      sleep(Duration(milliseconds: 300)); // File was not found without timeout
+      sleep(Duration(milliseconds: delayLoad)); // File was not found without timeout
       _fileToString(filename);
     });
   }
@@ -103,12 +115,14 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
 
     if(filename == 'cases-gps.csv'){
       var count = 1;
+      List columnTitles = rows[0].split(",");
+
       rows.forEach((strRow){
         if(strRow == "") return false;
         if(count > 1){
-          var city = strRow.split(",");
-          LatLng markerLocation = LatLng(double.parse(city[2].toString()), double.parse(city[3].toString()));
-          InfoWindow info = new InfoWindow(title: city[1], snippet: 'Total: ' + city[4]);
+          var city = strRow.split(",");    
+          LatLng markerLocation = LatLng(double.parse(city[columnTitles.indexOf("lat")].toString()), double.parse(city[columnTitles.indexOf("lon")].toString()));
+          InfoWindow info = new InfoWindow(title: city[columnTitles.indexOf("name")], snippet: 'Total: ' + city[columnTitles.indexOf("total")]);
           MarkerId markerId = MarkerId((count-1).toString());
           
           markers.add(
@@ -131,16 +145,18 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
     } 
     else if(filename == 'cases-brazil-total.csv'){
       var count = 1;
+      List columnTitles = rows[0].split(",");
+
       rows.forEach((strRow){
         if(strRow == "") return false;
         if(count > 2){
-          var st = strRow.split(",");
+          var st = strRow.split(",");   
           LatLng markerLocation = LatLng(
-            states[st[1]].latitute, 
-            states[st[1]].longitude
+            states[st[columnTitles.indexOf("state")]].latitute, 
+            states[st[columnTitles.indexOf("state")]].longitude
           );
-          InfoWindow info = new InfoWindow(title: states[st[1]].name, snippet: 'Total: ' + st[2] + ' / Fatais: ' + st[5]);
-          MarkerId markerId = MarkerId(st[1]);
+          InfoWindow info = new InfoWindow(title: states[st[columnTitles.indexOf("state")]].name, snippet: 'Total: ' + st[columnTitles.indexOf("totalCases")] + ' / Fatais: ' + st[columnTitles.indexOf("deaths")]);
+          MarkerId markerId = MarkerId(st[columnTitles.indexOf("state")]);
           
           markers.add(
             Marker(
@@ -154,6 +170,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
           setState(() {
             markers = markers;
             _areMarkersLoading = false;
+            _isMapLoading = false;
           });
         }
         count++;
@@ -169,7 +186,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
         children: <Widget>[
           // Google Map widget
           Opacity(
-            opacity: 1,
+            opacity: _isMapLoading ? 0 : 1,
             child: GoogleMap(
               mapToolbarEnabled: false,
               initialCameraPosition: CameraPosition(
