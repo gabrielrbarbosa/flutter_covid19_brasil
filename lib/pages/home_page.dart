@@ -28,7 +28,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
   /// Map loading flag
   bool _isMapLoading = true;
   bool _areMarkersLoading = true;
-  var delayLoad = 150;
+  var delayLoad = 300;
   BitmapDescriptor bitmapIconCity, bitmapIconState;
 
   Map<String, dynamic> _countryInfo = {'cases': '0', 'active': '0', 'recovered': '0', 'deaths': '0'};
@@ -38,6 +38,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
                       '\nFatais: ' + _countryInfo['deaths'].toString();          
 
   void initState(){
+    super.initState();
     loadPrefs();
   }
 
@@ -46,7 +47,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
     bool _firstAppLoad = (prefs.getBool('firstLoad') ?? true);
 
     if(_firstAppLoad){
-      delayLoad = 300;
+      delayLoad = 500;
       prefs.setBool('firstLoad', false);
     }
 
@@ -111,6 +112,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
   }
 
   void _createMarkers(txt, filename) async{
+    InfoWindow info;
     var rows = txt.split("\n");
 
     if(filename == 'cases-gps.csv'){
@@ -119,11 +121,20 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
 
       rows.forEach((strRow){
         if(strRow == "") return false;
-        if(count > 1){
-          var city = strRow.split(",");    
+        var city = strRow.split(",");   
+        var next_type = rows[count].split(',')[columnTitles.indexOf("type")];
+        var type = city[columnTitles.indexOf("type")];
+        
+        if(count > 1 && type != 'D0' && type != 'D1'){
           LatLng markerLocation = LatLng(double.parse(city[columnTitles.indexOf("lat")].toString()), double.parse(city[columnTitles.indexOf("lon")].toString()));
-          InfoWindow info = new InfoWindow(title: city[columnTitles.indexOf("name")], snippet: 'Total: ' + city[columnTitles.indexOf("total")]);
-          MarkerId markerId = MarkerId((count-1).toString());
+
+          if(next_type == 'D0' || next_type == 'D1'){
+            var deaths = rows[count].split(',')[columnTitles.indexOf("total")];
+            info = new InfoWindow(title: city[columnTitles.indexOf("name")], snippet: 'Total: ' + city[columnTitles.indexOf("total")] + ' / Fatais: ' + deaths);
+          } else {
+            info = new InfoWindow(title: city[columnTitles.indexOf("name")], snippet: 'Total: ' + city[columnTitles.indexOf("total")]);
+          }
+          MarkerId markerId = MarkerId((count).toString());
           
           markers.add(
             Marker(

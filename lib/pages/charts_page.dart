@@ -11,11 +11,7 @@ class ChartsPage extends StatefulWidget {
   _ChartsPageState createState() => _ChartsPageState();
 }
 
-class _ChartsPageState extends State<ChartsPage> with AutomaticKeepAliveClientMixin {
-  // Load page only once
-  @override
-  bool get wantKeepAlive => true;
-
+class _ChartsPageState extends State<ChartsPage> {
   LineChart lineChart;
   int chartIndex = 0;
   bool showChart = false;
@@ -27,6 +23,10 @@ class _ChartsPageState extends State<ChartsPage> with AutomaticKeepAliveClientMi
 
   void initState() {  
     super.initState();
+    downloadFiles();
+  }
+
+  void downloadFiles() async{
     _requestDownload('https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-cities-time.csv', 'cases-brazil-cities-time.csv');
     _requestDownload('https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-states.csv', 'cases-brazil-states.csv');
   }
@@ -39,7 +39,7 @@ class _ChartsPageState extends State<ChartsPage> with AutomaticKeepAliveClientMi
       showNotification: false,
       openFileFromNotification: false
     ).then((result){
-       sleep(Duration(seconds: 1)); // File was not found without timeout
+       sleep(Duration(milliseconds: 300)); // File was not found without timeout
       _fileToString(filename);
     });
   }
@@ -155,7 +155,6 @@ class _ChartsPageState extends State<ChartsPage> with AutomaticKeepAliveClientMi
         });
       break;
     }
-    // TODO: save in storage these variables so user can open this page already in selected region after opening the app again
     
     fileData.forEach((strRow){
       if(strRow == "") return false;

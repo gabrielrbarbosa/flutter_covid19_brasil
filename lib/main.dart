@@ -66,12 +66,12 @@ class _MainPage extends State<MainPage> {
   }
 
   _onSelectItem(int index) {
+    if (_scaffoldKey.currentState.isEndDrawerOpen) {
+      _scaffoldKey.currentState.openDrawer();
+    } else {
+      _scaffoldKey.currentState.openEndDrawer();
+    }
     setState(() => _selectedDrawerIndex = index);
-     if (_scaffoldKey.currentState.isEndDrawerOpen) {
-        _scaffoldKey.currentState.openDrawer();
-      } else {
-        _scaffoldKey.currentState.openEndDrawer();
-      }
   }
 
   @override
@@ -101,7 +101,11 @@ class _MainPage extends State<MainPage> {
           child: new Column(
             children: <Widget>[
               new UserAccountsDrawerHeader(
-                  accountName: new Text("Informações do Coronavírus no Brasil"), accountEmail: null),
+                  accountName: new Text("Informações sobre a COVID-19 no Brasil", style: TextStyle(color: Colors.black45)), 
+                  accountEmail: null,
+                  decoration: new BoxDecoration(image: new DecorationImage(
+                    image: new AssetImage('assets/images/img_menu.png'),
+                  )),),
               new Column(children: drawerOptions)
             ],
           ),
