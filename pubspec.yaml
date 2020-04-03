@@ -24,13 +24,13 @@ dependencies:
 
   path_provider: ^1.6.5
 
-  flutter_downloader: ^1.4.1
-
   webview_flutter: ^0.3.19+9
 
   flutter_launcher_icons: ^0.7.4
 
   fl_animated_linechart: ^1.1.1
+
+  splashscreen: ^1.2.0
 
 dev_dependencies:
   flutter_test:

@@ -1,241 +1,117 @@
-import 'package:flutter_downloader/flutter_downloader.dart';
-import 'dart:async';
-import 'dart:io';
-import 'dart:convert';
-import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:http/http.dart' as http;
-import '../states.dart';
 
-class HomePage extends StatefulWidget {
-  @override
-  _HomePageState createState() => _HomePageState();
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+import 'package:covid_19_brasil/pages/charts_page.dart';
+import 'package:covid_19_brasil/pages/map_page.dart';
+
+class DrawerItem {
+  String title;
+  IconData icon;
+  DrawerItem(this.title, this.icon);
 }
 
-class _HomePageState extends State<HomePage>{
-  final Completer<GoogleMapController> _mapController = Completer();
+class HomePage extends StatefulWidget {  
+  final drawerItems = [
+    new DrawerItem("Mapa Geral", Icons.location_on),
+    new DrawerItem("Estatísticas", Icons.show_chart),
+    new DrawerItem("Dados por Estado", Icons.map),
+    new DrawerItem("Ministério da Saúde", Icons.new_releases)
+  ];
+  @override
+  State<StatefulWidget> createState() {
+    return _HomePageState();
+  }
+}
 
-  /// Set of displayed markers and cluster markers on the map
-  List<Marker> markers = <Marker>[];
-  double _currentZoom = 4;
+class _HomePageState extends State<HomePage> {
+   int _selectedDrawerIndex = 0;
+   bool _isLoadingPage = true;
 
-  /// Map loading flag
-  bool _isMapLoading = true;
-  bool _areMarkersLoading = true;
-  BitmapDescriptor bitmapIconCity, bitmapIconState;
+   GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
 
-  Map<String, dynamic> _countryInfo = {'cases': 0, 'active': 0, 'recovered': 0, 'deaths': 0, 'fatality': 0};
-  String get info => 'Total: ' + _countryInfo["cases"].toString() + 
-                      '\nAtivos: ' + _countryInfo['active'].toString() +
-                      '\nRecuperados: ' + _countryInfo['recovered'].toString() +
-                      '\nFatais: ' + _countryInfo['deaths'].toString() +
-                      '\nLetalidade: ' + _countryInfo['fatality'].toString() + '%';          
+   void initState(){
+     super.initState();
+   }
 
-  void initState(){
-    super.initState();
-    loadPrefs();
+  _getDrawerItemWidget(int pos) {
+    switch (pos) {
+      case 0:
+        return new MapPage();
+      case 1:
+        return new ChartsPage();
+      case 2:
+        return Container(
+          child: WebView(
+            key: new Key('statesMapIframe'),
+            initialUrl: Uri.dataFromString('<html><body style="margin: 0; padding: 0;"><iframe style="width:100%;height:100%" src="https://e.infogr.am/coronavirus-brasil-1hd12yzmlwww4km?live"></iframe></body></html>', mimeType: 'text/html').toString(),
+            javascriptMode: JavascriptMode.unrestricted,
+          )
+        );
+      case 3:
+        return Opacity(opacity: _isLoadingPage ? 0 : 1, child: (Container(
+          child: WebView(
+            key: new Key('twitterIframe'),
+            initialUrl: Uri.dataFromString('<html><body style="margin: 0; padding: 0;"><a class="twitter-timeline" href="https://twitter.com/minsaude?ref_src=twsrc%5Etfw">Tweets by minsaude</a> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script></body></html>', mimeType: 'text/html').toString(),
+            javascriptMode: JavascriptMode.unrestricted,
+            onPageFinished: (finish) {
+              setState(() {
+                _isLoadingPage = false;
+              });
+            },
+          )
+        )));
+      default:
+        return new Text("Error");
+    }
   }
 
-  void loadPrefs() async{
-    BitmapDescriptor.fromAssetImage(ImageConfiguration(size: Size(64, 64)),
-        'assets/images/pin-city.png')
-    .then((d) {
-      bitmapIconCity = d;
-    });
-    BitmapDescriptor.fromAssetImage(ImageConfiguration(size: Size(64, 64)),
-        'assets/images/pin-state.png')
-    .then((d) {
-      bitmapIconState = d;
-    });
-  }
-
-  fetchData(country) async {      
-    final response = await http.get('https://corona.lmao.ninja/countries/' + country);
-    
-    if (response.statusCode == 200) {
-      var jsonResponse = json.decode(response.body);
-      _countryInfo['cases'] = int.parse(jsonResponse['cases'].toString());
-      _countryInfo['active'] = int.parse(jsonResponse['active'].toString());
-      _countryInfo['recovered'] = int.parse(jsonResponse['recovered'].toString());
-      _countryInfo['deaths'] = int.parse(jsonResponse['deaths'].toString());
-      _countryInfo['fatality'] = ((_countryInfo['deaths'] / _countryInfo['cases']) * 100).toStringAsFixed(2);
-
-      setState(() {
-        _countryInfo = _countryInfo;
-      });
+  _onSelectItem(int index) {
+    if (_scaffoldKey.currentState.isEndDrawerOpen) {
+      _scaffoldKey.currentState.openDrawer();
     } else {
-      throw Exception('Erro ao carregar informações.');
+      _scaffoldKey.currentState.openEndDrawer();
     }
-  }
-
-  /// Called when the Google Map widget is created. Updates the map loading state and inits the markers.
-  void _onMapCreated(GoogleMapController controller) async {
-    _mapController.complete(controller);
-
-    fetchData('brazil');
-    _requestDownload('https://raw.githubusercontent.com/wcota/covid19br/master/cases-gps.csv', 'cases-gps.csv');
-    _requestDownload('https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-total.csv', 'cases-brazil-total.csv');
-  }
-
-  void _requestDownload(link, filename) async{
-    var dir = await getExternalStorageDirectory();
-    await FlutterDownloader.enqueue(
-      url: link,
-      savedDir: dir.path,
-      showNotification: false,
-      openFileFromNotification: false
-    );
-    FlutterDownloader.registerCallback((id, status, progress) {
-      _fileToString(filename);
-    });
-  }
-
-  void _fileToString(filename) async{
-    var dir = await getExternalStorageDirectory();
-    var fullPath = dir.path + "/" + filename;
-    File file = new File(fullPath);
-    String text = await file.readAsString();
-    _createMarkers(text, filename);
-  }
-
-  void _createMarkers(txt, filename) async{
-    InfoWindow info;
-    var rows = txt.split("\n");
-
-    if(filename == 'cases-gps.csv'){
-      var count = 1;
-      List columnTitles = rows[0].split(",");
-
-      rows.forEach((strRow){
-        if(strRow == "") return false;
-        var city = strRow.split(",");   
-        var nextType = rows[count].split(',')[columnTitles.indexOf("type")];
-        var type = city[columnTitles.indexOf("type")];
-        
-        if(count > 1 && type != 'D0' && type != 'D1'){
-          LatLng markerLocation = LatLng(double.parse(city[columnTitles.indexOf("lat")].toString()), double.parse(city[columnTitles.indexOf("lon")].toString()));
-
-          if(nextType == 'D0' || nextType == 'D1'){
-            var deaths = rows[count].split(',')[columnTitles.indexOf("total")];
-            info = new InfoWindow(title: city[columnTitles.indexOf("name")], snippet: 'Total: ' + city[columnTitles.indexOf("total")] + ' / Fatais: ' + deaths);
-          } else {
-            info = new InfoWindow(title: city[columnTitles.indexOf("name")], snippet: 'Total: ' + city[columnTitles.indexOf("total")]);
-          }
-          MarkerId markerId = MarkerId((count).toString());
-          
-          markers.add(
-            Marker(
-              markerId: markerId,
-              position: markerLocation,
-              infoWindow: info,
-              icon: bitmapIconCity
-            ),
-          );
-          
-          setState(() {
-            markers = markers;
-            _areMarkersLoading = false;
-          });
-        }
-        count++;
-        return true;
-      });
-    } 
-    else if(filename == 'cases-brazil-total.csv'){
-      var count = 1;
-      List columnTitles = rows[0].split(",");
-
-      rows.forEach((strRow){
-        if(strRow == "") return false;
-        if(count > 2){
-          var st = strRow.split(",");   
-          LatLng markerLocation = LatLng(
-            states[st[columnTitles.indexOf("state")]].latitute, 
-            states[st[columnTitles.indexOf("state")]].longitude
-          );
-          InfoWindow info = new InfoWindow(title: states[st[columnTitles.indexOf("state")]].name, snippet: 'Total: ' + st[columnTitles.indexOf("totalCases")] + ' / Fatais: ' + st[columnTitles.indexOf("deaths")]);
-          MarkerId markerId = MarkerId(st[columnTitles.indexOf("state")]);
-          
-          markers.add(
-            Marker(
-              markerId: markerId,
-              position: markerLocation,
-              infoWindow: info,
-              icon: bitmapIconState
-            ),
-          );
-          
-          setState(() {
-            markers = markers;
-            _areMarkersLoading = false;
-            _isMapLoading = false;
-          });
-        }
-        count++;
-        return true;
-      });
-    }
+    setState(() => _selectedDrawerIndex = index);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: <Widget>[
-          // Google Map widget
-          Opacity(
-            opacity: _isMapLoading ? 0 : 1,
-            child: GoogleMap(
-              mapToolbarEnabled: false,
-              initialCameraPosition: CameraPosition(
-                target: LatLng(-18.2679862, -50.6720566),
-                zoom: _currentZoom,
-              ),
-              markers: Set<Marker>.of(markers),
-              onMapCreated: (controller) => _onMapCreated(controller)
-            ),
-          ),
+  var drawerOptions = <Widget>[];
+    for (var i = 0; i < widget.drawerItems.length; i++) {
+      var d = widget.drawerItems[i];
+      drawerOptions.add(
+        new ListTile(
+          leading: new Icon(d.icon),
+          title: new Text(d.title),
+          selected: i == _selectedDrawerIndex,
+          onTap: () => _onSelectItem(i),
+        )
+      );
+    }
 
-          // Map markers loading indicator
-          if (_areMarkersLoading)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: Card(
-                  elevation: 2,
-                  color: Colors.grey.withOpacity(0.9),
-                  child: Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: Text(
-                      'Carregando...',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Align(
-                alignment: Alignment.topRight,
-                child: Card(
-                  elevation: 2,
-                  color: Colors.blue[300].withOpacity(0.9),
-                  child: Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: Text(
-                      info,
-                      style: TextStyle(color: Colors.white,
-                      fontSize: 16),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
+    return new Scaffold(
+        key: _scaffoldKey,
+        appBar: new AppBar(
+          title: new Text(widget.drawerItems[_selectedDrawerIndex].title),
+          backgroundColor: Colors.blue,
+          brightness: Brightness.light
+        ),
+        drawer: new Drawer(
+          child: new Column(
+            children: <Widget>[
+              new UserAccountsDrawerHeader(
+                  accountName: new Text("Informações sobre a COVID-19 no Brasil", style: TextStyle(color: Colors.black45)), 
+                  accountEmail: null,
+                  decoration: new BoxDecoration(image: new DecorationImage(
+                    image: new AssetImage('assets/images/img_menu.png'),
+                  )),),
+              new Column(children: drawerOptions)
+            ],
+          ),
+        ),
+        body: _getDrawerItemWidget(_selectedDrawerIndex),
     );
   }
 }
+

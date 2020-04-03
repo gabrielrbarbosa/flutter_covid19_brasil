@@ -1,14 +1,13 @@
-import 'package:covid_19_brasil/pages/charts_page.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:splashscreen/splashscreen.dart';
 import 'package:covid_19_brasil/pages/home_page.dart';
-import 'package:webview_flutter/webview_flutter.dart';
-import 'package:flutter_downloader/flutter_downloader.dart';
 
 void main() {
   SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
     systemNavigationBarColor: Colors.blue, // navigation bar color
-    statusBarColor: Colors.blue, // status bar color
+    statusBarColor: Colors.pink, // status bar color
   ));
   runApp(MainPage());
 }
@@ -32,100 +31,29 @@ class MainPage extends StatefulWidget {
   }
 }
 
-class _MainPage extends State<MainPage> {
-   int _selectedDrawerIndex = 0;
-   int flag = 0;
-   bool _isLoadingPage = true;
-
-   GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
-
-  _loadFlutterDownloader() async{
-    await FlutterDownloader.initialize();
-  }
-
-  _getDrawerItemWidget(int pos) {
-    if(pos == 0 && flag == 0){
-      _loadFlutterDownloader();
-      flag = 1;
-    }
-
-    switch (pos) {
-      case 0:
-        return new HomePage();
-      case 1:
-        return new ChartsPage();
-      case 2:
-        return Container(
-          child: WebView(
-            key: new Key('statesMapIframe'),
-            initialUrl: Uri.dataFromString('<html><body style="margin: 0; padding: 0;"><iframe style="width:100%;height:100%" src="https://e.infogr.am/coronavirus-brasil-1hd12yzmlwww4km?live"></iframe></body></html>', mimeType: 'text/html').toString(),
-            javascriptMode: JavascriptMode.unrestricted,
-          )
-        );
-      case 3:
-        return Opacity(opacity: _isLoadingPage ? 0 : 1, child: (Container(
-          child: WebView(
-            key: new Key('twitterIframe'),
-            initialUrl: Uri.dataFromString('<html><body style="margin: 0; padding: 0;"><a class="twitter-timeline" href="https://twitter.com/minsaude?ref_src=twsrc%5Etfw">Tweets by minsaude</a> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script></body></html>', mimeType: 'text/html').toString(),
-            javascriptMode: JavascriptMode.unrestricted,
-            onPageFinished: (finish) {
-              setState(() {
-                _isLoadingPage = false;
-              });
-            },
-          )
-        )));
-      default:
-        return new Text("Error");
-    }
-  }
-
-  _onSelectItem(int index) {
-    if (_scaffoldKey.currentState.isEndDrawerOpen) {
-      _scaffoldKey.currentState.openDrawer();
-    } else {
-      _scaffoldKey.currentState.openEndDrawer();
-    }
-    setState(() => _selectedDrawerIndex = index);
-  }
-
+class AfterSplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-  var drawerOptions = <Widget>[];
-    for (var i = 0; i < widget.drawerItems.length; i++) {
-      var d = widget.drawerItems[i];
-      drawerOptions.add(
-        new ListTile(
-          leading: new Icon(d.icon),
-          title: new Text(d.title),
-          selected: i == _selectedDrawerIndex,
-          onTap: () => _onSelectItem(i),
-        )
-      );
-    }
+    return new HomePage();
+  }
+}
 
+class _MainPage extends State<MainPage> {
+  @override
+  Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(
-        key: _scaffoldKey,
-        appBar: new AppBar(
-          title: new Text(widget.drawerItems[_selectedDrawerIndex].title),
-          backgroundColor: Colors.blue,
-          brightness: Brightness.light
-        ),
-        drawer: new Drawer(
-          child: new Column(
-            children: <Widget>[
-              new UserAccountsDrawerHeader(
-                  accountName: new Text("Informações sobre a COVID-19 no Brasil", style: TextStyle(color: Colors.black45)), 
-                  accountEmail: null,
-                  decoration: new BoxDecoration(image: new DecorationImage(
-                    image: new AssetImage('assets/images/img_menu.png'),
-                  )),),
-              new Column(children: drawerOptions)
-            ],
-          ),
-        ),
-        body: _getDrawerItemWidget(_selectedDrawerIndex),
+      home: new SplashScreen(
+        seconds: 2,
+        navigateAfterSeconds: new AfterSplashScreen(),
+        title: new Text('Informações sobre a COVID-19',
+        style: new TextStyle(
+          fontSize: 20.0
+        ),),
+        image: Image.asset('assets/images/img_menu.png'),
+        backgroundColor: Colors.white,
+        styleTextUnderTheLoader: new TextStyle(),
+        photoSize: 200.0,
+        loaderColor: Colors.blue
       ),
     );
   }

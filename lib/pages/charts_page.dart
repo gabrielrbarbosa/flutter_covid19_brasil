@@ -1,7 +1,5 @@
-import 'package:flutter_downloader/flutter_downloader.dart';
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:http/http.dart' as http;
 import 'package:fl_animated_linechart/fl_animated_linechart.dart';
 import 'package:fl_animated_linechart/chart/area_line_chart.dart';
 import 'package:fl_animated_linechart/common/pair.dart';
@@ -27,29 +25,19 @@ class _ChartsPageState extends State<ChartsPage> {
   }
 
   void downloadFiles() async{
-    _requestDownload('https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-cities-time.csv', 'cases-brazil-cities-time.csv');
-    _requestDownload('https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-states.csv', 'cases-brazil-states.csv');
+    fetchCsvFile('https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-cities-time.csv', 'cases-brazil-cities-time.csv');
+    fetchCsvFile('https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-states.csv', 'cases-brazil-states.csv');
   }
 
-  void _requestDownload(link, filename) async{
-    var dir = await getExternalStorageDirectory();
-    await FlutterDownloader.enqueue(
-      url: link,
-      savedDir: dir.path,
-      showNotification: false,
-      openFileFromNotification: false
-    );
-    FlutterDownloader.registerCallback((id, status, progress) {
-      _fileToString(filename);
-    });
-  }
-
-  void _fileToString(filename) async{
-    var dir = await getExternalStorageDirectory();
-    var fullPath = dir.path + "/" + filename;
-    File file = new File(fullPath);
-    String text = await file.readAsString();
-    _createChart(text, filename);
+  fetchCsvFile(link, filename) async {      
+    final response = await http.get(link);
+    
+    if (response.statusCode == 200) {
+      var txt = response.body;
+      _createChart(txt, filename);
+    } else {
+      throw Exception('Erro ao carregar informações.');
+    }
   }
 
   void _createChart(txt, filename){
