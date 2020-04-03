@@ -22,9 +22,9 @@ class DrawerItem {
 class MainPage extends StatefulWidget {  
   final drawerItems = [
     new DrawerItem("Mapa Geral", Icons.location_on),
-    new DrawerItem("Informação por Estado", Icons.map),
-    new DrawerItem("Estatísticas", Icons.insert_chart)
-    //new DrawerItem("Países", Icons.map)
+    new DrawerItem("Estatísticas", Icons.show_chart),
+    new DrawerItem("Dados por Estado", Icons.map),
+    new DrawerItem("Ministério da Saúde", Icons.new_releases)
   ];
   @override
   State<StatefulWidget> createState() {
@@ -35,6 +35,7 @@ class MainPage extends StatefulWidget {
 class _MainPage extends State<MainPage> {
    int _selectedDrawerIndex = 0;
    int flag = 0;
+   bool _isLoadingPage = true;
 
    GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
 
@@ -52,14 +53,28 @@ class _MainPage extends State<MainPage> {
       case 0:
         return new HomePage();
       case 1:
+        return new ChartsPage();
+      case 2:
         return Container(
           child: WebView(
+            key: new Key('statesMapIframe'),
             initialUrl: Uri.dataFromString('<html><body style="margin: 0; padding: 0;"><iframe style="width:100%;height:100%" src="https://e.infogr.am/coronavirus-brasil-1hd12yzmlwww4km?live"></iframe></body></html>', mimeType: 'text/html').toString(),
             javascriptMode: JavascriptMode.unrestricted,
           )
         );
-      case 2:
-        return new ChartsPage();
+      case 3:
+        return Opacity(opacity: _isLoadingPage ? 0 : 1, child: (Container(
+          child: WebView(
+            key: new Key('twitterIframe'),
+            initialUrl: Uri.dataFromString('<html><body style="margin: 0; padding: 0;"><a class="twitter-timeline" href="https://twitter.com/minsaude?ref_src=twsrc%5Etfw">Tweets by minsaude</a> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script></body></html>', mimeType: 'text/html').toString(),
+            javascriptMode: JavascriptMode.unrestricted,
+            onPageFinished: (finish) {
+              setState(() {
+                _isLoadingPage = false;
+              });
+            },
+          )
+        )));
       default:
         return new Text("Error");
     }

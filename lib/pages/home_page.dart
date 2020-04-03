@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import '../states.dart';
 
 class HomePage extends StatefulWidget {
@@ -14,12 +13,8 @@ class HomePage extends StatefulWidget {
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin {
+class _HomePageState extends State<HomePage>{
   final Completer<GoogleMapController> _mapController = Completer();
-  
-  // Load page only once
-  @override
-  bool get wantKeepAlive => true;
 
   /// Set of displayed markers and cluster markers on the map
   List<Marker> markers = <Marker>[];
@@ -28,14 +23,14 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
   /// Map loading flag
   bool _isMapLoading = true;
   bool _areMarkersLoading = true;
-  var delayLoad = 300;
   BitmapDescriptor bitmapIconCity, bitmapIconState;
 
-  Map<String, dynamic> _countryInfo = {'cases': '0', 'active': '0', 'recovered': '0', 'deaths': '0'};
+  Map<String, dynamic> _countryInfo = {'cases': 0, 'active': 0, 'recovered': 0, 'deaths': 0, 'fatality': 0};
   String get info => 'Total: ' + _countryInfo["cases"].toString() + 
                       '\nAtivos: ' + _countryInfo['active'].toString() +
                       '\nRecuperados: ' + _countryInfo['recovered'].toString() +
-                      '\nFatais: ' + _countryInfo['deaths'].toString();          
+                      '\nFatais: ' + _countryInfo['deaths'].toString() +
+                      '\nLetalidade: ' + _countryInfo['fatality'].toString() + '%';          
 
   void initState(){
     super.initState();
@@ -43,14 +38,6 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
   }
 
   void loadPrefs() async{
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    bool _firstAppLoad = (prefs.getBool('firstLoad') ?? true);
-
-    if(_firstAppLoad){
-      delayLoad = 500;
-      prefs.setBool('firstLoad', false);
-    }
-
     BitmapDescriptor.fromAssetImage(ImageConfiguration(size: Size(64, 64)),
         'assets/images/pin-city.png')
     .then((d) {
@@ -68,10 +55,11 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
     
     if (response.statusCode == 200) {
       var jsonResponse = json.decode(response.body);
-      _countryInfo['cases'] = jsonResponse['cases'];
-      _countryInfo['active'] = jsonResponse['active'];
-      _countryInfo['recovered'] = jsonResponse['recovered'];
-      _countryInfo['deaths'] = jsonResponse['deaths'];
+      _countryInfo['cases'] = int.parse(jsonResponse['cases'].toString());
+      _countryInfo['active'] = int.parse(jsonResponse['active'].toString());
+      _countryInfo['recovered'] = int.parse(jsonResponse['recovered'].toString());
+      _countryInfo['deaths'] = int.parse(jsonResponse['deaths'].toString());
+      _countryInfo['fatality'] = ((_countryInfo['deaths'] / _countryInfo['cases']) * 100).toStringAsFixed(2);
 
       setState(() {
         _countryInfo = _countryInfo;
@@ -97,8 +85,8 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
       savedDir: dir.path,
       showNotification: false,
       openFileFromNotification: false
-    ).then((result){
-      sleep(Duration(milliseconds: delayLoad)); // File was not found without timeout
+    );
+    FlutterDownloader.registerCallback((id, status, progress) {
       _fileToString(filename);
     });
   }
@@ -122,13 +110,13 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
       rows.forEach((strRow){
         if(strRow == "") return false;
         var city = strRow.split(",");   
-        var next_type = rows[count].split(',')[columnTitles.indexOf("type")];
+        var nextType = rows[count].split(',')[columnTitles.indexOf("type")];
         var type = city[columnTitles.indexOf("type")];
         
         if(count > 1 && type != 'D0' && type != 'D1'){
           LatLng markerLocation = LatLng(double.parse(city[columnTitles.indexOf("lat")].toString()), double.parse(city[columnTitles.indexOf("lon")].toString()));
 
-          if(next_type == 'D0' || next_type == 'D1'){
+          if(nextType == 'D0' || nextType == 'D1'){
             var deaths = rows[count].split(',')[columnTitles.indexOf("total")];
             info = new InfoWindow(title: city[columnTitles.indexOf("name")], snippet: 'Total: ' + city[columnTitles.indexOf("total")] + ' / Fatais: ' + deaths);
           } else {

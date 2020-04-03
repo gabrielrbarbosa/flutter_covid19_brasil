@@ -38,8 +38,8 @@ class _ChartsPageState extends State<ChartsPage> {
       savedDir: dir.path,
       showNotification: false,
       openFileFromNotification: false
-    ).then((result){
-       sleep(Duration(milliseconds: 300)); // File was not found without timeout
+    );
+    FlutterDownloader.registerCallback((id, status, progress) {
       _fileToString(filename);
     });
   }
@@ -117,6 +117,7 @@ class _ChartsPageState extends State<ChartsPage> {
         setState(() {
           if(_locationsRegions != _locationsStates){
             _locationsRegions = _locationsStates;
+            chartIndex = 0;
           }
           if(_lastSelectedLocation != _selectedType){
             _selectedRegion = 'TOTAL';
@@ -131,9 +132,10 @@ class _ChartsPageState extends State<ChartsPage> {
         setState(() {
           if(_locationsRegions != _locationsStates){
             _locationsRegions = _locationsStates;
+            chartIndex = 0;
           }
           if(_lastSelectedLocation != _selectedType){
-            _selectedRegion = 'SP';
+            _selectedRegion = 'PR';
             _lastSelectedLocation = _selectedType;
           }
         });
@@ -163,9 +165,9 @@ class _ChartsPageState extends State<ChartsPage> {
       if(count > 1){
         if(info[index] == _selectedRegion){
           String date = info[columnTitles.indexOf('date')].toString();
-          totalCases[DateTime.parse(date)] = double.parse(info[columnTitles.indexOf('totalCases')]);
-          newCases[DateTime.parse(date)] = double.parse(info[columnTitles.indexOf('newCases')]);
-          if(_selectedType != 'Cidades') fatalCases[DateTime.parse(date)] = double.parse(info?.elementAt(columnTitles.indexOf('deaths')));
+          if(columnTitles.indexOf('totalCases') != -1) totalCases[DateTime.parse(date)] = double.parse(info[columnTitles.indexOf('totalCases')]);
+          if(columnTitles.indexOf('newCases') != -1) newCases[DateTime.parse(date)] = double.parse(info[columnTitles.indexOf('newCases')]);
+          if(columnTitles.indexOf('deaths') != -1) fatalCases[DateTime.parse(date)] = double.parse(info[columnTitles.indexOf('deaths')]);
           return true;
         }
       }
@@ -250,7 +252,7 @@ class _ChartsPageState extends State<ChartsPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: 
                   <Widget>[ 
-                    FlatButton(
+                    if(lineTotalCases.length > 0) FlatButton(
                       shape: RoundedRectangleBorder(
                           side: BorderSide(color: Colors.black45),
                           borderRadius: BorderRadius.all(Radius.circular(3))),
@@ -266,7 +268,7 @@ class _ChartsPageState extends State<ChartsPage> {
                         });
                       },
                     ),
-                    FlatButton(
+                    if(lineNewCases.length > 0) FlatButton(
                       shape: RoundedRectangleBorder(
                           side: BorderSide(color: Colors.black45),
                           borderRadius: BorderRadius.all(Radius.circular(3))),
@@ -281,7 +283,7 @@ class _ChartsPageState extends State<ChartsPage> {
                         });
                       },
                     ),
-                    if(_selectedType != 'Cidades') FlatButton(
+                    if(lineFatalCases.length > 0) FlatButton(
                       shape: RoundedRectangleBorder(
                           side: BorderSide(color: Colors.black45),
                           borderRadius: BorderRadius.all(Radius.circular(3))),
