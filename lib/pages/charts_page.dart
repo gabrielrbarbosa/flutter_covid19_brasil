@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:fl_animated_linechart/fl_animated_linechart.dart';
-import 'package:fl_animated_linechart/chart/area_line_chart.dart';
-import 'package:fl_animated_linechart/common/pair.dart';
 
 class ChartsPage extends StatefulWidget {
   @override
@@ -11,7 +9,7 @@ class ChartsPage extends StatefulWidget {
 
 class _ChartsPageState extends State<ChartsPage> {
   LineChart lineChart;
-  int chartIndex = 0;
+  int chartIndex = 1;
   bool showChart = false;
   Map<DateTime, double> lineTotalCases = {}, lineNewCases = {}, lineFatalCases = {};
   List<String> _locations = ['País', 'Estados', 'Cidades'];
@@ -105,7 +103,7 @@ class _ChartsPageState extends State<ChartsPage> {
         setState(() {
           if(_locationsRegions != _locationsStates){
             _locationsRegions = _locationsStates;
-            chartIndex = 0;
+            chartIndex = 1;
           }
           if(_lastSelectedLocation != _selectedType){
             _selectedRegion = 'TOTAL';
@@ -120,7 +118,7 @@ class _ChartsPageState extends State<ChartsPage> {
         setState(() {
           if(_locationsRegions != _locationsStates){
             _locationsRegions = _locationsStates;
-            chartIndex = 0;
+            chartIndex = 1;
           }
           if(_lastSelectedLocation != _selectedType){
             _selectedRegion = 'PR';
@@ -136,7 +134,7 @@ class _ChartsPageState extends State<ChartsPage> {
         setState(() {
           if(_locationsRegions != _locationsCities){
             _locationsRegions = _locationsCities;
-            chartIndex = 0;
+            chartIndex = 1;
           }
           if(_lastSelectedLocation != _selectedType){
             _selectedRegion = "Londrina/PR";
@@ -175,7 +173,7 @@ class _ChartsPageState extends State<ChartsPage> {
   Widget build(BuildContext context) {
 
     if (chartIndex == 0) {
-      lineChart = AreaLineChart.fromDateTimeMaps([lineTotalCases], [Colors.red.shade900], ['CONFIRMADOS'],  gradients: [Pair(Colors.orange, Colors.red.shade700)]);
+      lineChart = LineChart.fromDateTimeMaps([lineTotalCases], [Colors.red.shade900], ['CONFIRMADOS']);
     } else if (chartIndex == 1) {
       lineChart = LineChart.fromDateTimeMaps([lineNewCases], [Colors.blue], ['NOVOS CASOS']);
     } else if (chartIndex == 2) {

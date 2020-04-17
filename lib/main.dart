@@ -7,7 +7,7 @@ import 'package:covid_19_brasil/pages/home_page.dart';
 void main() {
   SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
     systemNavigationBarColor: Colors.blue, // navigation bar color
-    statusBarColor: Colors.pink, // status bar color
+    statusBarColor: Colors.blue, // status bar color
   ));
   runApp(MainPage());
 }

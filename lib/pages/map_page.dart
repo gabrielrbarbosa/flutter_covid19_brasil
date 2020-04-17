@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+import 'package:expandable/expandable.dart';
 import '../states.dart';
 
 class MapPage extends StatefulWidget {
@@ -16,18 +18,24 @@ class _MapPageState extends State<MapPage>{
   /// Set of displayed markers and cluster markers on the map
   List<Marker> markers = <Marker>[];
   double _currentZoom = 4;
+  double _cardHeight = 100;
 
   /// Map loading flag
   bool _isMapLoading = true;
   bool _areMarkersLoading = true;
   BitmapDescriptor bitmapIconCity, bitmapIconState;
 
-  Map<String, dynamic> _countryInfo = {'cases': 0, 'active': 0, 'recovered': 0, 'deaths': 0, 'fatality': 0};
-  String get info => 'Total: ' + _countryInfo["cases"].toString() + 
-                      '\nAtivos: ' + _countryInfo['active'].toString() +
-                      '\nRecuperados: ' + _countryInfo['recovered'].toString() +
-                      '\nFatais: ' + _countryInfo['deaths'].toString() +
-                      '\nLetalidade: ' + _countryInfo['fatality'].toString() + '%';          
+  Map<String, dynamic> _countryInfo = {'cases': 0, 'active': 0, 'recovered': 0, 'deaths': 0, 'fatality': 0, 'tests': 0,
+                                      'casesPerOneMillion' : 0, 'deathsPerOneMillion' : 0, 'testsPerOneMillion' : 0};
+  String get info => 'Total: ' + new NumberFormat.decimalPattern('pt').format(_countryInfo['cases']).toString() + 
+                      '\nAtivos: ' + new NumberFormat.decimalPattern('pt').format(_countryInfo['active']).toString() +
+                      '\nRecuperados: ' + new NumberFormat.decimalPattern('pt').format(_countryInfo['recovered']).toString() +
+                      '\nFatais: ' + new NumberFormat.decimalPattern('pt').format(_countryInfo['deaths']).toString() +
+                      '\nLetalidade: ' + _countryInfo['fatality'].toString() + '%' +
+                      '\nTestes Feitos: ' + new NumberFormat.decimalPattern('pt').format(_countryInfo['tests']).toString() +
+                      '\n\nCasos/Milhão: ' + new NumberFormat.decimalPattern('pt').format(_countryInfo['casesPerOneMillion']).toString()+
+                      '\nMortes/Milhão: ' + new NumberFormat.decimalPattern('pt').format(_countryInfo['deathsPerOneMillion']).toString() +
+                      '\nTestes/Milhão: ' +new NumberFormat.decimalPattern('pt').format(_countryInfo['testsPerOneMillion']).toString();
 
   void initState(){
     super.initState();
@@ -57,14 +65,11 @@ class _MapPageState extends State<MapPage>{
   }
 
   fetchData(country) async {      
-    final response = await http.get('https://corona.lmao.ninja/countries/' + country);
+    final response = await http.get('https://corona.lmao.ninja/v2/countries/' + country);
     
     if (response.statusCode == 200) {
       var jsonResponse = json.decode(response.body);
-      _countryInfo['cases'] = int.parse(jsonResponse['cases'].toString());
-      _countryInfo['active'] = int.parse(jsonResponse['active'].toString());
-      _countryInfo['recovered'] = int.parse(jsonResponse['recovered'].toString());
-      _countryInfo['deaths'] = int.parse(jsonResponse['deaths'].toString());
+      _countryInfo = jsonResponse;
       _countryInfo['fatality'] = ((_countryInfo['deaths'] / _countryInfo['cases']) * 100).toStringAsFixed(2);
 
       setState(() {
@@ -165,6 +170,17 @@ class _MapPageState extends State<MapPage>{
     }
   }
 
+  toggleCard(){
+    // TODO: fix this function
+    setState(() {
+      if(_cardHeight == 100){
+        _cardHeight = 250;
+      } else{
+        _cardHeight = 100;
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -184,12 +200,87 @@ class _MapPageState extends State<MapPage>{
             ),
           ),
 
+          Padding(
+            padding: const EdgeInsets.all(1.0),
+              child: Align(
+                alignment: Alignment.bottomLeft,
+                child: Container(
+                  height: _cardHeight,
+                    child: ExpandableTheme(
+                      data: const ExpandableThemeData(iconColor: Colors.white, useInkWell: true),
+                      child: ListView(  
+                        physics: const BouncingScrollPhysics(),
+                        children: <Widget>[
+                          ExpandableNotifier(
+                            child: Card(
+                              elevation: 2,
+                              clipBehavior: Clip.antiAliasWithSaveLayer,
+                              color: Colors.blue[300],
+                              child: Column(
+                                children: <Widget>[
+                                  ScrollOnExpand(
+                                    scrollOnExpand: true,
+                                    scrollOnCollapse: false,
+                                    child: GestureDetector(
+                                      onTap: (){ toggleCard(); },
+                                      child: ExpandablePanel(
+                                        theme: const ExpandableThemeData(
+                                          headerAlignment: ExpandablePanelHeaderAlignment.center,
+                                          tapBodyToExpand: true,
+                                          tapBodyToCollapse: true,
+                                        ),
+                                        header: Padding(
+                                            padding: EdgeInsets.all(10),
+                                            child: Text(
+                                              "Mais Informações",
+                                              style: TextStyle(color: Colors.white,
+                                              fontSize: 16),
+                                            )),
+                                        expanded: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: <Widget>[
+                                              Padding(
+                                                  padding: EdgeInsets.only(bottom: 10),
+                                                  child: Text(
+                                                    info,
+                                                    softWrap: true,
+                                                    overflow: TextOverflow.fade,
+                                                    style: TextStyle(color: Colors.white,
+                                                    fontSize: 16),
+                                                  )),
+                                          ],
+                                        ),
+                                      builder: (context, collapsed, expanded) {
+                                        var controller = ExpandableController.of(context);
+                                        return Padding(
+                                          padding: EdgeInsets.only(left: 10, right: 10),
+                                          child: Expandable(
+                                            collapsed: collapsed,
+                                            expanded: expanded,
+                                            theme: const ExpandableThemeData(crossFadePoint: 0),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+
           // Map markers loading indicator
           if (_areMarkersLoading)
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Align(
-                alignment: Alignment.bottomCenter,
+                alignment: Alignment.topCenter,
                 child: Card(
                   elevation: 2,
                   color: Colors.grey.withOpacity(0.9),
@@ -198,24 +289,6 @@ class _MapPageState extends State<MapPage>{
                     child: Text(
                       'Carregando...',
                       style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Align(
-                alignment: Alignment.topRight,
-                child: Card(
-                  elevation: 2,
-                  color: Colors.blue[300].withOpacity(0.9),
-                  child: Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: Text(
-                      info,
-                      style: TextStyle(color: Colors.white,
-                      fontSize: 16),
                     ),
                   ),
                 ),
