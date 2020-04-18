@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart';
-import 'package:expandable/expandable.dart';
+import 'package:sliding_up_panel/sliding_up_panel.dart';
 import '../states.dart';
+import 'info_widget.dart';
 
 class MapPage extends StatefulWidget {
   @override
@@ -27,16 +27,6 @@ class _MapPageState extends State<MapPage>{
 
   Map<String, dynamic> _countryInfo = {'cases': 0, 'active': 0, 'recovered': 0, 'deaths': 0, 'fatality': 0, 'tests': 0,
                                       'casesPerOneMillion' : 0, 'deathsPerOneMillion' : 0, 'testsPerOneMillion' : 0};
-  String get info => 'Total: ' + new NumberFormat.decimalPattern('pt').format(_countryInfo['cases']).toString() + 
-                      '\nAtivos: ' + new NumberFormat.decimalPattern('pt').format(_countryInfo['active']).toString() +
-                      '\nRecuperados: ' + new NumberFormat.decimalPattern('pt').format(_countryInfo['recovered']).toString() +
-                      '\nFatais: ' + new NumberFormat.decimalPattern('pt').format(_countryInfo['deaths']).toString() +
-                      '\nLetalidade: ' + _countryInfo['fatality'].toString() + '%' +
-                      '\nTestes Feitos: ' + new NumberFormat.decimalPattern('pt').format(_countryInfo['tests']).toString() +
-                      '\n\nCasos/Milhão: ' + new NumberFormat.decimalPattern('pt').format(_countryInfo['casesPerOneMillion']).toString()+
-                      '\nMortes/Milhão: ' + new NumberFormat.decimalPattern('pt').format(_countryInfo['deathsPerOneMillion']).toString() +
-                      '\nTestes/Milhão: ' +new NumberFormat.decimalPattern('pt').format(_countryInfo['testsPerOneMillion']).toString();
-
   void initState(){
     super.initState();
     loadPrefs();
@@ -170,17 +160,6 @@ class _MapPageState extends State<MapPage>{
     }
   }
 
-  toggleCard(){
-    // TODO: fix this function
-    setState(() {
-      if(_cardHeight == 100){
-        _cardHeight = 250;
-      } else{
-        _cardHeight = 100;
-      }
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -200,78 +179,16 @@ class _MapPageState extends State<MapPage>{
             ),
           ),
 
-          Padding(
-            padding: const EdgeInsets.all(1.0),
-              child: Align(
-                alignment: Alignment.bottomLeft,
-                child: Container(
-                  height: _cardHeight,
-                    child: ExpandableTheme(
-                      data: const ExpandableThemeData(iconColor: Colors.white, useInkWell: true),
-                      child: ListView(  
-                        physics: const BouncingScrollPhysics(),
-                        children: <Widget>[
-                          ExpandableNotifier(
-                            child: Card(
-                              elevation: 2,
-                              clipBehavior: Clip.antiAliasWithSaveLayer,
-                              color: Colors.blue[300],
-                              child: Column(
-                                children: <Widget>[
-                                  ScrollOnExpand(
-                                    scrollOnExpand: true,
-                                    scrollOnCollapse: false,
-                                    child: GestureDetector(
-                                      onTap: (){ toggleCard(); },
-                                      child: ExpandablePanel(
-                                        theme: const ExpandableThemeData(
-                                          headerAlignment: ExpandablePanelHeaderAlignment.center,
-                                          tapBodyToExpand: true,
-                                          tapBodyToCollapse: true,
-                                        ),
-                                        header: Padding(
-                                            padding: EdgeInsets.all(10),
-                                            child: Text(
-                                              "Mais Informações",
-                                              style: TextStyle(color: Colors.white,
-                                              fontSize: 16),
-                                            )),
-                                        expanded: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: <Widget>[
-                                              Padding(
-                                                  padding: EdgeInsets.only(bottom: 10),
-                                                  child: Text(
-                                                    info,
-                                                    softWrap: true,
-                                                    overflow: TextOverflow.fade,
-                                                    style: TextStyle(color: Colors.white,
-                                                    fontSize: 16),
-                                                  )),
-                                          ],
-                                        ),
-                                      builder: (context, collapsed, expanded) {
-                                        var controller = ExpandableController.of(context);
-                                        return Padding(
-                                          padding: EdgeInsets.only(left: 10, right: 10),
-                                          child: Expandable(
-                                            collapsed: collapsed,
-                                            expanded: expanded,
-                                            theme: const ExpandableThemeData(crossFadePoint: 0),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                  ),
-                ),
-              ),
+          SlidingUpPanel(
+            backdropOpacity: 0.1,
+            color: Colors.grey[100],
+            backdropTapClosesPanel: true,
+            backdropEnabled: true,
+            header: Container(width: MediaQuery.of(context).size.width,height: 10, padding: new EdgeInsets.all(4.0),child: Align(alignment: Alignment.topCenter, child: Icon(Icons.arrow_upward, size: 18))),
+            minHeight: 100,
+            maxHeight: 440,
+            panel: Center(
+              child: Details(report: _countryInfo),
             ),
           ),
 

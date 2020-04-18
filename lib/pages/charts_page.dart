@@ -173,11 +173,11 @@ class _ChartsPageState extends State<ChartsPage> {
   Widget build(BuildContext context) {
 
     if (chartIndex == 0) {
-      lineChart = LineChart.fromDateTimeMaps([lineTotalCases], [Colors.red.shade900], ['CONFIRMADOS']);
+      lineChart = LineChart.fromDateTimeMaps([lineTotalCases], [Colors.red], ['CONFIRMADOS']);
     } else if (chartIndex == 1) {
       lineChart = LineChart.fromDateTimeMaps([lineNewCases], [Colors.blue], ['NOVOS CASOS']);
     } else if (chartIndex == 2) {
-      lineChart = LineChart.fromDateTimeMaps([lineFatalCases], [Colors.black87], ['CASOS FATAIS']);
+      lineChart = LineChart.fromDateTimeMaps([lineFatalCases], [Colors.yellow.shade800], ['CASOS FATAIS']);
     }
 
     return Scaffold(

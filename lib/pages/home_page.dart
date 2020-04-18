@@ -12,7 +12,7 @@ class DrawerItem {
 
 class HomePage extends StatefulWidget {  
   final drawerItems = [
-    new DrawerItem("Mapa Geral", Icons.location_on),
+    new DrawerItem("Casos de COVID-19 Brasil", Icons.location_on),
     new DrawerItem("Estatísticas", Icons.show_chart),
     new DrawerItem("Dados por Estado", Icons.map),
     new DrawerItem("Ministério da Saúde", Icons.new_releases)
