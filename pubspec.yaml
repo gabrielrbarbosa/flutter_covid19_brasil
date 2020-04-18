@@ -14,7 +14,7 @@ dependencies:
   cupertino_icons: ^0.1.2
 
   # Google maps
-  google_maps_flutter: ^0.5.21+3
+  google_maps_flutter: ^0.5.26
 
   # Map markers clustering
   fluster: ^1.1.2
@@ -49,4 +49,6 @@ flutter:
   assets:
     - assets/images/pin-city.png
     - assets/images/pin-state.png
+    - assets/images/pin-country.png
     - assets/images/img_menu.png
+    - assets/map-style.txt

@@ -18,7 +18,8 @@ class Details extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 createDetailItem(context: context, color: Colors.red, value: formatted(report['cases']), text: "Total Confirmados"),
-                createDetailItem(context: context, color: Colors.blue, value: formatted(report['active']), text: "Casos Ativos"),
+                createDetailItem(context: context, color: Colors.yellow[800], value: formatted(report['deaths']), text: "Casos Fatais"),
+                
               ],
             ),
           ),
@@ -26,8 +27,8 @@ class Details extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
+                createDetailItem(context: context, color: Colors.blue, value: formatted(report['active']), text: "Casos Ativos"),
                 createDetailItem(context: context, color: Colors.green[500], value: formatted(report['recovered']), text: "Casos Recuperados"),
-                createDetailItem(context: context, color: Colors.yellow[800], value: formatted(report['deaths']), text: "Casos Fatais"),
               ],
             ),
           ),
@@ -50,7 +51,7 @@ class Details extends StatelessWidget {
                   '\n\nMortes por 1 milhão de habitantes: ' + formatted(report['deathsPerOneMillion']) +
                   '\n\nTestes por 1 milhão de habitantes: ' + formatted(report['testsPerOneMillion']) +
                   '\n\nVeja informações por cidades ou estados em Estatísticas',
-                  style: Theme.of(context).textTheme.caption.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.caption,
                 ),
                 ),
               ],
@@ -99,8 +100,7 @@ Widget createDetailItem({BuildContext context, String value, Color color, String
                 '$value',
                 style: Theme.of(context)
                     .textTheme
-                    .headline
-                    .copyWith(fontWeight: FontWeight.bold),
+                    .headline,
               ),
             ],
           )
@@ -110,16 +110,6 @@ Widget createDetailItem({BuildContext context, String value, Color color, String
   );
 }
 
-
 String formatted(int val){
   return new NumberFormat.decimalPattern('pt').format(val).toString();
 }
-/*'Total: ' + new NumberFormat.decimalPattern('pt').format(_countryInfo['cases']).toString() + 
-                      '\nAtivos: ' + .toString() +
-                      '\nRecuperados: ' + new NumberFormat.decimalPattern('pt').format(_countryInfo['recovered']).toString() +
-                      '\nFatais: ' + new NumberFormat.decimalPattern('pt').format(_countryInfo['deaths']).toString() +
-                      '\nLetalidade: ' + _countryInfo['fatality'].toString() + '%' +
-                      '\nTestes Feitos: ' + new NumberFormat.decimalPattern('pt').format(_countryInfo['tests']).toString() +
-                      '\n\nCasos/Milhão: ' + new NumberFormat.decimalPattern('pt').format(_countryInfo['casesPerOneMillion']).toString()+
-                      '\nMortes/Milhão: ' + new NumberFormat.decimalPattern('pt').format(_countryInfo['deathsPerOneMillion']).toString() +
-                      '\nTestes/Milhão: ' +new NumberFormat.decimalPattern('pt').format(_countryInfo['testsPerOneMillion']).toString();*/

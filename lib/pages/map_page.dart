@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import '../states.dart';
 import 'info_widget.dart';
+import 'package:intl/intl.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 class MapPage extends StatefulWidget {
   @override
@@ -18,12 +20,12 @@ class _MapPageState extends State<MapPage>{
   /// Set of displayed markers and cluster markers on the map
   List<Marker> markers = <Marker>[];
   double _currentZoom = 4;
-  double _cardHeight = 100;
+  String _mapStyle;
 
   /// Map loading flag
   bool _isMapLoading = true;
   bool _areMarkersLoading = true;
-  BitmapDescriptor bitmapIconCity, bitmapIconState;
+  BitmapDescriptor bitmapIconCity, bitmapIconState, bitmapIconCountry;
 
   Map<String, dynamic> _countryInfo = {'cases': 0, 'active': 0, 'recovered': 0, 'deaths': 0, 'fatality': 0, 'tests': 0,
                                       'casesPerOneMillion' : 0, 'deathsPerOneMillion' : 0, 'testsPerOneMillion' : 0};
@@ -43,11 +45,20 @@ class _MapPageState extends State<MapPage>{
     .then((d) {
       bitmapIconState = d;
     });
+    BitmapDescriptor.fromAssetImage(ImageConfiguration(size: Size(64, 64)),
+        'assets/images/pin-country.png')
+    .then((d) {
+      bitmapIconCountry = d;
+    });
+    rootBundle.loadString('assets/map-style.txt').then((string) {
+      _mapStyle = string;
+    });
   }
 
    /// Called when the Google Map widget is created. Updates the map loading state and inits the markers.
   void _onMapCreated(GoogleMapController controller) async {
     _mapController.complete(controller);
+    controller.setMapStyle(_mapStyle);
 
     fetchData('brazil');
     fetchCsvFile('https://raw.githubusercontent.com/wcota/covid19br/master/cases-gps.csv', 'cases-gps.csv');
@@ -64,6 +75,32 @@ class _MapPageState extends State<MapPage>{
 
       setState(() {
         _countryInfo = _countryInfo;
+      });
+      fetchAllCountries();
+    } else {
+      throw Exception('Erro ao carregar informações.');
+    }
+  }
+
+  fetchAllCountries() async {      
+    final response = await http.get('https://corona.lmao.ninja/v2/countries/');
+    
+    if (response.statusCode == 200) {
+      var jsonResponse = json.decode(response.body);
+      for(var country in jsonResponse){
+        //var request = await http.get(country['countryInfo']['flag']); Use country flag as icon marker
+        markers.add(
+          Marker(
+            markerId: new MarkerId(country['countryInfo']['iso3'].toString()),
+            position: new LatLng(double.parse(country['countryInfo']['lat'].toString()), double.parse(country['countryInfo']['long'].toString())),
+            infoWindow: new InfoWindow(title: country['country'], snippet: 'Total: ' + formatted(country['cases'].toString()) + ' / ' + 'Fatais: ' + formatted(country['deaths'].toString())),
+            icon: bitmapIconCountry
+          )
+        );
+      }
+      setState(() {
+        markers = markers;
+        _areMarkersLoading = false;
       });
     } else {
       throw Exception('Erro ao carregar informações.');
@@ -100,9 +137,9 @@ class _MapPageState extends State<MapPage>{
 
           if(nextType == 'D0' || nextType == 'D1'){
             var deaths = rows[count].split(',')[columnTitles.indexOf("total")];
-            info = new InfoWindow(title: city[columnTitles.indexOf("name")], snippet: 'Total: ' + city[columnTitles.indexOf("total")] + ' / Fatais: ' + deaths);
+            info = new InfoWindow(title: city[columnTitles.indexOf("name")], snippet: 'Total: ' + formatted(city[columnTitles.indexOf("total")]) + ' / Fatais: ' + formatted(deaths));
           } else {
-            info = new InfoWindow(title: city[columnTitles.indexOf("name")], snippet: 'Total: ' + city[columnTitles.indexOf("total")]);
+            info = new InfoWindow(title: city[columnTitles.indexOf("name")], snippet: 'Total: ' + formatted(city[columnTitles.indexOf("total")]));
           }
           MarkerId markerId = MarkerId((count).toString());
           
@@ -136,7 +173,7 @@ class _MapPageState extends State<MapPage>{
             states[st[columnTitles.indexOf("state")]].latitute, 
             states[st[columnTitles.indexOf("state")]].longitude
           );
-          InfoWindow info = new InfoWindow(title: states[st[columnTitles.indexOf("state")]].name, snippet: 'Total: ' + st[columnTitles.indexOf("totalCases")] + ' / Fatais: ' + st[columnTitles.indexOf("deaths")]);
+          InfoWindow info = new InfoWindow(title: states[st[columnTitles.indexOf("state")]].name, snippet: 'Total: ' + formatted(st[columnTitles.indexOf("totalCases")]) + ' / Fatais: ' + formatted(st[columnTitles.indexOf("deaths")]));
           MarkerId markerId = MarkerId(st[columnTitles.indexOf("state")]);
           
           markers.add(
@@ -160,6 +197,11 @@ class _MapPageState extends State<MapPage>{
     }
   }
 
+  String formatted(String str){
+    int val = int.parse(str);
+    return new NumberFormat.decimalPattern('pt').format(val).toString();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -170,6 +212,7 @@ class _MapPageState extends State<MapPage>{
             opacity: _isMapLoading ? 0 : 1,
             child: GoogleMap(
               mapToolbarEnabled: false,
+              minMaxZoomPreference: new MinMaxZoomPreference(1.0, 12.0),
               initialCameraPosition: CameraPosition(
                 target: LatLng(-18.2679862, -50.6720566),
                 zoom: _currentZoom,
