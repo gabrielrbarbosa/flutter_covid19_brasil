@@ -76,7 +76,7 @@ class _MapPageState extends State<MapPage>{
       setState(() {
         _countryInfo = _countryInfo;
       });
-      fetchAllCountries();
+      fetchAllStates();
     } else {
       throw Exception('Erro ao carregar informações.');
     }
@@ -91,7 +91,7 @@ class _MapPageState extends State<MapPage>{
         //var request = await http.get(country['countryInfo']['flag']); Use country flag as icon marker
         markers.add(
           Marker(
-            markerId: new MarkerId(country['countryInfo']['iso3'].toString()),
+            markerId: new MarkerId(country['country'].toString()),
             position: new LatLng(double.parse(country['countryInfo']['lat'].toString()), double.parse(country['countryInfo']['long'].toString())),
             infoWindow: new InfoWindow(title: country['country'], snippet: 'Total: ' + formatted(country['cases'].toString()) + ' / ' + 'Fatais: ' + formatted(country['deaths'].toString())),
             icon: bitmapIconCountry
@@ -102,6 +102,33 @@ class _MapPageState extends State<MapPage>{
         markers = markers;
         _areMarkersLoading = false;
       });
+    } else {
+      throw Exception('Erro ao carregar informações.');
+    }
+  }
+
+  fetchAllStates() async {      
+    final response = await http.get('https://corona.lmao.ninja/v2/jhucsse/');
+    
+    if (response.statusCode == 200) {
+      var jsonResponse = json.decode(response.body);
+      for(var country in jsonResponse){
+        if(country['province'] != 'null' && country['coordinates']['latitude'] != ''){
+          markers.add(
+            Marker(
+              markerId: new MarkerId(country['province'].toString()),
+              position: new LatLng(double.parse(country['coordinates']['latitude']), double.parse(country['coordinates']['longitude'])),
+              infoWindow: new InfoWindow(title: country['province'], snippet: 'Total: ' + formatted(country['stats']['confirmed'].toString()) + ' / ' + 'Fatais: ' + formatted(country['stats']['deaths'].toString())),
+              icon: bitmapIconState
+            )
+          );
+        }
+      }
+      setState(() {
+        markers = markers;
+        _areMarkersLoading = false;
+      });
+      fetchAllCountries();
     } else {
       throw Exception('Erro ao carregar informações.');
     }

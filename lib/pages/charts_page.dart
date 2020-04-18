@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:fl_animated_linechart/fl_animated_linechart.dart';
@@ -103,7 +105,7 @@ class _ChartsPageState extends State<ChartsPage> {
         setState(() {
           if(_locationsRegions != _locationsStates){
             _locationsRegions = _locationsStates;
-            chartIndex = 1;
+            chartIndex = 0;
           }
           if(_lastSelectedLocation != _selectedType){
             _selectedRegion = 'TOTAL';
@@ -118,7 +120,7 @@ class _ChartsPageState extends State<ChartsPage> {
         setState(() {
           if(_locationsRegions != _locationsStates){
             _locationsRegions = _locationsStates;
-            chartIndex = 1;
+            chartIndex = 0;
           }
           if(_lastSelectedLocation != _selectedType){
             _selectedRegion = 'PR';
@@ -134,7 +136,7 @@ class _ChartsPageState extends State<ChartsPage> {
         setState(() {
           if(_locationsRegions != _locationsCities){
             _locationsRegions = _locationsCities;
-            chartIndex = 1;
+            chartIndex = 0;
           }
           if(_lastSelectedLocation != _selectedType){
             _selectedRegion = "Londrina/PR";
@@ -145,7 +147,15 @@ class _ChartsPageState extends State<ChartsPage> {
     }
     
     fileData.forEach((strRow){
-      if(strRow == "") return false;
+      if(strRow == ""){
+        setState(() {
+          lineTotalCases = totalCases;
+          lineNewCases = newCases;
+          lineFatalCases = fatalCases;
+          showChart = true;
+        });
+        return false;
+      }
 
       var info = strRow.split(",");
       if(count > 1){
@@ -159,13 +169,6 @@ class _ChartsPageState extends State<ChartsPage> {
       }
       count++;
       return false;
-    });
-
-    setState(() {
-      lineTotalCases = totalCases;
-      lineNewCases = newCases;
-      lineFatalCases = fatalCases;
-      showChart = true;
     });
   }
 
@@ -287,7 +290,7 @@ class _ChartsPageState extends State<ChartsPage> {
                     ),
                   ]),
               ),
-                Expanded(
+              Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: showChart ? AnimatedLineChart(
