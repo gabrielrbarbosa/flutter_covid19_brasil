@@ -29,6 +29,8 @@ class _MapPageState extends State<MapPage>{
 
   Map<String, dynamic> _countryInfo = {'cases': 0, 'active': 0, 'recovered': 0, 'deaths': 0, 'fatality': 0, 'tests': 0,
                                       'casesPerOneMillion' : 0, 'deathsPerOneMillion' : 0, 'testsPerOneMillion' : 0};
+  Map<String, dynamic> _globalInfo = {'cases': 0, 'active': 0, 'recovered': 0, 'deaths': 0, 'fatality': 0, 'tests': 0,
+                                      'casesPerOneMillion' : 0, 'deathsPerOneMillion' : 0, 'testsPerOneMillion' : 0};
   void initState(){
     super.initState();
     loadPrefs();
@@ -60,23 +62,33 @@ class _MapPageState extends State<MapPage>{
     _mapController.complete(controller);
     controller.setMapStyle(_mapStyle);
 
-    fetchData('brazil');
+    fetchCountry('brazil');
     fetchCsvFile('https://raw.githubusercontent.com/wcota/covid19br/master/cases-gps.csv', 'cases-gps.csv');
     fetchCsvFile('https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-total.csv', 'cases-brazil-total.csv');
+    fetchGlobal();
+    fetchAllStates();
+    fetchAllCountries();
   }
 
-  fetchData(country) async {      
+  fetchGlobal() async{
+    final response = await http.get('https://corona.lmao.ninja/v2/all');
+
+    if (response.statusCode == 200) {
+      var jsonResponse = json.decode(response.body);
+      _globalInfo = jsonResponse;
+      _globalInfo['fatality'] = ((_globalInfo['deaths'] / _globalInfo['cases']) * 100).toStringAsFixed(2);
+    } else {
+      throw Exception('Erro ao carregar informações.');
+    }
+  }
+
+  fetchCountry(country) async {      
     final response = await http.get('https://corona.lmao.ninja/v2/countries/' + country);
     
     if (response.statusCode == 200) {
       var jsonResponse = json.decode(response.body);
       _countryInfo = jsonResponse;
       _countryInfo['fatality'] = ((_countryInfo['deaths'] / _countryInfo['cases']) * 100).toStringAsFixed(2);
-
-      setState(() {
-        _countryInfo = _countryInfo;
-      });
-      fetchAllStates();
     } else {
       throw Exception('Erro ao carregar informações.');
     }
@@ -88,7 +100,6 @@ class _MapPageState extends State<MapPage>{
     if (response.statusCode == 200) {
       var jsonResponse = json.decode(response.body);
       for(var country in jsonResponse){
-        //var request = await http.get(country['countryInfo']['flag']); Use country flag as icon marker
         markers.add(
           Marker(
             markerId: new MarkerId(country['country'].toString()),
@@ -99,7 +110,7 @@ class _MapPageState extends State<MapPage>{
         );
       }
       setState(() {
-        markers = markers;
+        markers =  markers;
         _areMarkersLoading = false;
       });
     } else {
@@ -125,10 +136,9 @@ class _MapPageState extends State<MapPage>{
         }
       }
       setState(() {
-        markers = markers;
+        markers =  markers;
         _areMarkersLoading = false;
       });
-      fetchAllCountries();
     } else {
       throw Exception('Erro ao carregar informações.');
     }
@@ -180,7 +190,7 @@ class _MapPageState extends State<MapPage>{
           );
           
           setState(() {
-            markers = markers;
+            markers =  markers;
             _areMarkersLoading = false;
           });
         }
@@ -213,7 +223,7 @@ class _MapPageState extends State<MapPage>{
           );
           
           setState(() {
-            markers = markers;
+            markers =  markers;
             _areMarkersLoading = false;
             _isMapLoading = false;
           });
@@ -254,11 +264,11 @@ class _MapPageState extends State<MapPage>{
             color: Colors.grey[100],
             backdropTapClosesPanel: true,
             backdropEnabled: true,
-            header: Container(width: MediaQuery.of(context).size.width,height: 10, padding: new EdgeInsets.all(4.0),child: Align(alignment: Alignment.topCenter, child: Icon(Icons.arrow_upward, size: 18))),
-            minHeight: 100,
-            maxHeight: 440,
+            header: Container(width: MediaQuery.of(context).size.width,height: 10, padding: new EdgeInsets.all(4.0),child: Align(alignment: Alignment.topCenter, child: Icon(Icons.arrow_upward, size: 18, color: Colors.blue))),
+            minHeight: 90,
+            maxHeight: 540,
             panel: Center(
-              child: Details(report: _countryInfo),
+              child: Details(report: _globalInfo, reportBR: _countryInfo),
             ),
           ),
 

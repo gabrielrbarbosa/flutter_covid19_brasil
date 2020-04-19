@@ -3,7 +3,8 @@ import 'package:intl/intl.dart';
 
 class Details extends StatelessWidget {
   final Map report;
-  Details({Key key, @required this.report}) : super(key: key);
+  final Map reportBR;
+  Details({Key key, @required this.report, @required this.reportBR}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -17,9 +18,8 @@ class Details extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                createDetailItem(context: context, color: Colors.red, value: formatted(report['cases']), text: "Total Confirmados"),
-                createDetailItem(context: context, color: Colors.yellow[800], value: formatted(report['deaths']), text: "Casos Fatais"),
-                
+                createDetailItem(context: context, color: Colors.red, value: formatted(reportBR['cases']), text: "Total Confirmados"),
+                createDetailItem(context: context, color: Colors.yellow[800], value: formatted(reportBR['deaths']), text: "Casos Fatais"),
               ],
             ),
           ),
@@ -27,8 +27,46 @@ class Details extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                createDetailItem(context: context, color: Colors.blue, value: formatted(report['active']), text: "Casos Ativos"),
-                createDetailItem(context: context, color: Colors.green[500], value: formatted(report['recovered']), text: "Casos Recuperados"),
+                createDetailItem(context: context, color: Colors.blue, value: formatted(reportBR['active']), text: "Casos Ativos"),
+                createDetailItem(context: context, color: Colors.green[500], value: formatted(reportBR['recovered']), text: "Casos Recuperados"),
+              ],
+            ),
+          ),
+          Container(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                createDetailItem(context: context, value: formatted(reportBR['tests']), text: "Testes Realizados"),
+                createDetailItem(context: context, value: reportBR['fatality'].toString() + "%", text: "Letalidade Atual"),
+              ],
+            ),
+          ),
+          Container(
+            margin: EdgeInsets.all(6.0),
+            padding: EdgeInsets.all(6.0),
+            child:
+              Text(
+                'Casos por 1 milhão de habitantes: ' + formatted(reportBR['casesPerOneMillion']) +
+                '\nMortes por 1 milhão de habitantes: ' + formatted(reportBR['deathsPerOneMillion']) +
+                '\nTestes por 1 milhão de habitantes: ' + formatted(reportBR['testsPerOneMillion']),
+                style: Theme.of(context).textTheme.caption,
+              ),
+            ),
+          Container(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                createDetailItem(context: context, color: Colors.red, value: formatted(report['cases']), text: "Global Confirmados"),
+                createDetailItem(context: context, color: Colors.yellow[800], value: formatted(report['deaths']), text: "Global Fatais"),
+              ],
+            ),
+          ),
+          Container(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                createDetailItem(context: context, color: Colors.blue, value: formatted(report['active']), text: "Global Ativos"),
+                createDetailItem(context: context, color: Colors.green[500], value: formatted(report['recovered']), text: "Global Recuperados"),
               ],
             ),
           ),
@@ -41,21 +79,8 @@ class Details extends StatelessWidget {
               ],
             ),
           ),
-
-          Container(
-            margin: EdgeInsets.all(6.0),
-            padding: EdgeInsets.all(6.0),
-              child:
-                Text(
-                  'Casos por 1 milhão de habitantes: ' + formatted(report['casesPerOneMillion']) +
-                  '\n\nMortes por 1 milhão de habitantes: ' + formatted(report['deathsPerOneMillion']) +
-                  '\n\nTestes por 1 milhão de habitantes: ' + formatted(report['testsPerOneMillion']) +
-                  '\n\nVeja informações por cidades ou estados em Estatísticas',
-                  style: Theme.of(context).textTheme.caption,
-                ),
-                ),
-              ],
-            ),
+        ],
+      )
     );
   }
 }
@@ -63,7 +88,7 @@ class Details extends StatelessWidget {
 Widget createDetailItem({BuildContext context, String value, Color color, String text}) {
   return Expanded(
       child: Container(
-      margin: EdgeInsets.all(12.0),
+      margin: EdgeInsets.only(left: 12, right: 12, bottom: 4, top: 4),
       padding: EdgeInsets.all(10.0),
       decoration: BoxDecoration(
         shape: BoxShape.rectangle,
@@ -77,8 +102,8 @@ Widget createDetailItem({BuildContext context, String value, Color color, String
             children: <Widget>[
               color != null ? Container(
                 margin: EdgeInsets.only(right: 8.0),
-                width: 15,
-                height: 15,
+                width: 12,
+                height: 12,
                 decoration: BoxDecoration(
                   shape: BoxShape.rectangle,
                   color: color ?? Colors.transparent,
@@ -92,7 +117,7 @@ Widget createDetailItem({BuildContext context, String value, Color color, String
             ],
           ),
           SizedBox(
-            height: 10.0,
+            height: 5.0,
           ),
           Row(
             children: <Widget>[

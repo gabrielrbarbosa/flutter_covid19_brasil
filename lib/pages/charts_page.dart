@@ -1,8 +1,8 @@
-import 'dart:io';
-
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:fl_animated_linechart/fl_animated_linechart.dart';
+import 'package:loading_overlay/loading_overlay.dart';
 
 class ChartsPage extends StatefulWidget {
   @override
@@ -12,7 +12,7 @@ class ChartsPage extends StatefulWidget {
 class _ChartsPageState extends State<ChartsPage> {
   LineChart lineChart;
   int chartIndex = 1;
-  bool showChart = false;
+  bool showChart = false, _loading = true;
   Map<DateTime, double> lineTotalCases = {}, lineNewCases = {}, lineFatalCases = {};
   List<String> _locations = ['País', 'Estados', 'Cidades'];
   List<String> _locationsStates = [], _locationsRegions = [], _locationsCities = [];
@@ -35,6 +35,11 @@ class _ChartsPageState extends State<ChartsPage> {
     if (response.statusCode == 200) {
       var txt = response.body;
       _createChart(txt, filename);
+      Future.delayed(const Duration(seconds: 3), () {
+        setState(() {
+          _loading = false;
+        });
+      });
     } else {
       throw Exception('Erro ao carregar informações.');
     }
@@ -172,6 +177,14 @@ class _ChartsPageState extends State<ChartsPage> {
     });
   }
 
+  getSuggestions(pattern) async{
+    if(pattern.length > 0){
+      return _locationsRegions.where((i) => i.toLowerCase().contains(pattern.toLowerCase())).toList();
+    } else{
+      return [];
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
 
@@ -184,56 +197,100 @@ class _ChartsPageState extends State<ChartsPage> {
     }
 
     return Scaffold(
-      body: 
-      SafeArea(
+      body: LoadingOverlay(
         child:
-        Container(
-        child: Column(
-            mainAxisSize: MainAxisSize.max,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: 
-                  <Widget>[ 
-                    DropdownButton(
-                      value: _selectedType,
-                      onChanged: (newValue) {
-                        setState(() {
-                          _selectedType = newValue;
-                        });
-                        updateChartInfo();
-                      },
-                      items: _locations.map((location) {
-                        return DropdownMenuItem(
-                          child: new Text(location),
-                          value: location,
-                        );
-                      }).toList(),
-                    ),
-                    if(_selectedType != 'País') (DropdownButton(
-                      value: _selectedRegion,
-                      onChanged: (newValue) {
-                        setState(() {
-                          _selectedRegion = newValue;
-                        });
-                        updateChartInfo();
-                      },
-                      items: _locationsRegions.map((location) {
-                        return DropdownMenuItem(
-                          child: new Text(location),
-                          value: location,
-                        );
-                      }).toList(),
+        SafeArea(
+          child:
+          Container(
+          child: Column(
+              mainAxisSize: MainAxisSize.max,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.max,
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: 
+                    <Widget>[ 
+                      DropdownButton(
+                        value: _selectedType,
+                        onChanged: (newValue) {
+                          setState(() {
+                            _selectedType = newValue;
+                          });
+                          updateChartInfo();
+                        },
+                        items: _locations.map((location) {
+                          return DropdownMenuItem(
+                            child: new Text(location),
+                            value: location,
+                          );
+                        }).toList(),
+                      ),
+                      if(_selectedType != 'País') 
+                      (DropdownButton(
+                        value: _selectedRegion,
+                        onChanged: (newValue) {
+                          setState(() {
+                            _selectedRegion = newValue;
+                          });
+                          updateChartInfo();
+                        },
+                        items: _locationsRegions.map((location) {
+                          return DropdownMenuItem(
+                            child: new Text(location),
+                            value: location,
+                          );
+                        }).toList(),
+                      )
                     )
-                    ),
-                  ],
+                  ])
                 ),
-              ),
+                    
+              if(_selectedType != 'País')
+              (Padding(
+                padding: const EdgeInsets.only(left: 16.0, right: 16.0),
+                child:
+                Row(
+                mainAxisSize: MainAxisSize.max,
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: <Widget>[ 
+                  Expanded( // wrap your Column in Expanded
+                    child: Column(
+                    children: <Widget>[
+                      TypeAheadFormField(
+                      textFieldConfiguration: TextFieldConfiguration(
+                        autofocus: false,
+                        style: DefaultTextStyle.of(context).style.copyWith(
+                          fontStyle: FontStyle.normal
+                        ),
+                        decoration: InputDecoration(
+                          labelText: 'Pesquisar:'
+                        )
+                      ),
+                      suggestionsCallback: (pattern) async {
+                        return await getSuggestions(pattern);
+                      },
+                      itemBuilder: (context, suggestion) {
+                        return ListTile(
+                          leading: Icon(Icons.location_on),
+                          title: Text(suggestion)
+                        );
+                      },
+                      onSuggestionSelected: (suggestion) {
+                        setState(() {
+                          _selectedRegion = suggestion;
+                        });
+                        updateChartInfo();
+                      },
+                      hideOnError: true,
+                      hideSuggestionsOnKeyboardHide: true,
+                  )],
+                ))])
+              )),
+                
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
@@ -307,8 +364,8 @@ class _ChartsPageState extends State<ChartsPage> {
                 ),
               ),
             ]),
-      ),
-    ),
+        ),
+      ), isLoading: _loading, opacity: 1, color: Colors.white,)
     );
   }
 }
