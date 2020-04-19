@@ -14,7 +14,7 @@ class HomePage extends StatefulWidget {
   final drawerItems = [
     new DrawerItem("Casos de COVID-19 Brasil", Icons.location_on),
     new DrawerItem("Estatísticas", Icons.show_chart),
-    new DrawerItem("Dados por Estado", Icons.map),
+    new DrawerItem("Índice de Isolamento", Icons.insert_chart),
     new DrawerItem("Ministério da Saúde", Icons.new_releases)
   ];
   @override
@@ -43,7 +43,7 @@ class _HomePageState extends State<HomePage> {
         return Container(
           child: WebView(
             key: new Key('statesMapIframe'),
-            initialUrl: Uri.dataFromString('<html><body style="margin: 0; padding: 0;"><iframe style="width:100%;height:100%" src="https://e.infogr.am/coronavirus-brasil-1hd12yzmlwww4km?live"></iframe></body></html>', mimeType: 'text/html').toString(),
+            initialUrl: Uri.dataFromString('<html><body style="margin: 0; padding: 0;"><iframe style="width:100%;height:100%" src="https://public.tableau.com/views/MKTScoredeisolamentosocial/VisoGeral?:embed=y&:showVizHome=n"></iframe></body></html>', mimeType: 'text/html').toString(),
             javascriptMode: JavascriptMode.unrestricted,
           )
         );

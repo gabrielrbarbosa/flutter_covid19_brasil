@@ -1,8 +1,9 @@
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:fl_animated_linechart/fl_animated_linechart.dart';
+import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:loading_overlay/loading_overlay.dart';
+import 'line_chart.dart';
 
 class ChartsPage extends StatefulWidget {
   @override
@@ -10,10 +11,10 @@ class ChartsPage extends StatefulWidget {
 }
 
 class _ChartsPageState extends State<ChartsPage> {
-  LineChart lineChart;
   int chartIndex = 1;
   bool showChart = false, _loading = true;
-  Map<DateTime, double> lineTotalCases = {}, lineNewCases = {}, lineFatalCases = {};
+  List<TimeSeriesCovid> lineTotalCases = [], lineNewCases = [], lineFatalCases = [];
+  List<charts.Series<dynamic, DateTime>> lineChart = [];
   List<String> _locations = ['País', 'Estados', 'Cidades'];
   List<String> _locationsStates = [], _locationsRegions = [], _locationsCities = [];
   String _selectedType = 'País', _selectedRegion = 'TOTAL', _lastSelectedLocation;
@@ -35,11 +36,6 @@ class _ChartsPageState extends State<ChartsPage> {
     if (response.statusCode == 200) {
       var txt = response.body;
       _createChart(txt, filename);
-      Future.delayed(const Duration(seconds: 3), () {
-        setState(() {
-          _loading = false;
-        });
-      });
     } else {
       throw Exception('Erro ao carregar informações.');
     }
@@ -99,7 +95,7 @@ class _ChartsPageState extends State<ChartsPage> {
 
   void updateChartInfo(){
     int count = 1, index;
-    Map<DateTime, double> totalCases = {}, newCases = {}, fatalCases = {};
+    List<TimeSeriesCovid> totalCases = [], newCases = [], fatalCases = [];
     List fileData, columnTitles;
 
     switch(_selectedType){
@@ -153,27 +149,32 @@ class _ChartsPageState extends State<ChartsPage> {
     
     fileData.forEach((strRow){
       if(strRow == ""){
-        setState(() {
-          lineTotalCases = totalCases;
-          lineNewCases = newCases;
-          lineFatalCases = fatalCases;
-          showChart = true;
-        });
         return false;
       }
 
       var info = strRow.split(",");
       if(count > 1){
         if(info[index] == _selectedRegion){
-          String date = info[columnTitles.indexOf('date')].toString();
-          if(columnTitles.indexOf('totalCases') != -1) totalCases[DateTime.parse(date)] = double.parse(info[columnTitles.indexOf('totalCases')]);
-          if(columnTitles.indexOf('newCases') != -1) newCases[DateTime.parse(date)] = double.parse(info[columnTitles.indexOf('newCases')]);
-          if(columnTitles.indexOf('deaths') != -1) fatalCases[DateTime.parse(date)] = double.parse(info[columnTitles.indexOf('deaths')]);
+          String date = info[columnTitles.indexOf('date')];
+          if(columnTitles.indexOf('totalCases') != -1) totalCases.add(new TimeSeriesCovid(DateTime.parse(date), int.parse(info[columnTitles.indexOf('totalCases')])));
+          if(columnTitles.indexOf('newCases') != -1) newCases.add(new TimeSeriesCovid(DateTime.parse(date), int.parse(info[columnTitles.indexOf('newCases')])));
+          if(columnTitles.indexOf('deaths') != -1) fatalCases.add(new TimeSeriesCovid(DateTime.parse(date), int.parse(info[columnTitles.indexOf('deaths')])));
           return true;
         }
       }
       count++;
       return false;
+    });
+    setState(() {
+      lineTotalCases = totalCases;
+      lineNewCases = newCases;
+      lineFatalCases = fatalCases;
+      showChart = true;
+    });
+    Future.delayed(const Duration(milliseconds: 500), () {
+      setState(() {
+        _loading = false;
+      });
     });
   }
 
@@ -189,11 +190,29 @@ class _ChartsPageState extends State<ChartsPage> {
   Widget build(BuildContext context) {
 
     if (chartIndex == 0) {
-      lineChart = LineChart.fromDateTimeMaps([lineTotalCases], [Colors.red], ['CONFIRMADOS']);
+      lineChart = [charts.Series<TimeSeriesCovid, DateTime>(
+          id: 'Confirmados',
+          colorFn: (_, __) => charts.MaterialPalette.red.shadeDefault,
+          domainFn: (TimeSeriesCovid register, _) => register.time,
+          measureFn: (TimeSeriesCovid register, _) => register.cases,
+          data: lineTotalCases,
+        )];
     } else if (chartIndex == 1) {
-      lineChart = LineChart.fromDateTimeMaps([lineNewCases], [Colors.blue], ['NOVOS CASOS']);
+      lineChart = [charts.Series<TimeSeriesCovid, DateTime>(
+          id: 'Novos Casos',
+          colorFn: (_, __) => charts.MaterialPalette.blue.shadeDefault,
+          domainFn: (TimeSeriesCovid register, _) => register.time,
+          measureFn: (TimeSeriesCovid register, _) => register.cases,
+          data: lineNewCases,
+        )];
     } else if (chartIndex == 2) {
-      lineChart = LineChart.fromDateTimeMaps([lineFatalCases], [Colors.yellow.shade800], ['CASOS FATAIS']);
+      lineChart = [charts.Series<TimeSeriesCovid, DateTime>(
+          id: 'Casos Fatais',
+          colorFn: (_, __) => charts.MaterialPalette.gray.shadeDefault,
+          domainFn: (TimeSeriesCovid register, _) => register.time,
+          measureFn: (TimeSeriesCovid register, _) => register.cases,
+          data: lineFatalCases,
+        )];
     }
 
     return Scaffold(
@@ -298,7 +317,7 @@ class _ChartsPageState extends State<ChartsPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: 
                   <Widget>[ 
-                    if(lineTotalCases.length > 0) FlatButton(
+                    if(lineTotalCases != null) FlatButton(
                       shape: RoundedRectangleBorder(
                           side: BorderSide(color: Colors.black45),
                           borderRadius: BorderRadius.all(Radius.circular(3))),
@@ -314,7 +333,7 @@ class _ChartsPageState extends State<ChartsPage> {
                         });
                       },
                     ),
-                    if(lineNewCases.length > 0) FlatButton(
+                    if(lineNewCases != null) FlatButton(
                       shape: RoundedRectangleBorder(
                           side: BorderSide(color: Colors.black45),
                           borderRadius: BorderRadius.all(Radius.circular(3))),
@@ -329,12 +348,12 @@ class _ChartsPageState extends State<ChartsPage> {
                         });
                       },
                     ),
-                    if(lineFatalCases.length > 0) FlatButton(
+                    if(lineFatalCases != null) FlatButton(
                       shape: RoundedRectangleBorder(
                           side: BorderSide(color: Colors.black45),
                           borderRadius: BorderRadius.all(Radius.circular(3))),
                       child: Text(
-                        'Casos Fatais',
+                        'Fatais',
                         style: TextStyle(
                             color:
                             chartIndex == 2 ? Colors.black : Colors.black12),
@@ -350,10 +369,12 @@ class _ChartsPageState extends State<ChartsPage> {
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: showChart ? AnimatedLineChart(
+                  child: showChart ? charts.TimeSeriesChart(
                     lineChart,
-                    key: UniqueKey(), //Unique key to force animations
-                  ) : 
+                    animate: false,
+                    defaultRenderer: new charts.LineRendererConfig(includePoints: true),
+                    dateTimeFactory: SimpleDateTimeFactory(),
+                  ) :
                   (Center(
                       child: Text(
                         "Carregando os dados...",
@@ -365,7 +386,7 @@ class _ChartsPageState extends State<ChartsPage> {
               ),
             ]),
         ),
-      ), isLoading: _loading, opacity: 1, color: Colors.white,)
+      ), isLoading: _loading, opacity: 0.7, color: Colors.white,)
     );
   }
 }
