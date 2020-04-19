@@ -1,8 +1,10 @@
+import 'package:date_format/date_format.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:loading_overlay/loading_overlay.dart';
+import 'package:intl/intl.dart';
 import 'line_chart.dart';
 
 class ChartsPage extends StatefulWidget {
@@ -19,6 +21,8 @@ class _ChartsPageState extends State<ChartsPage> {
   List<String> _locationsStates = [], _locationsRegions = [], _locationsCities = [];
   String _selectedType = 'País', _selectedRegion = 'TOTAL', _lastSelectedLocation;
   List fileDataCities, fileDataStates;
+  DateTime _timeSelected;
+  String _pointSelected;
 
   void initState() {  
     super.initState();
@@ -186,6 +190,36 @@ class _ChartsPageState extends State<ChartsPage> {
     }
   }
 
+  _onSelectionChanged(charts.SelectionModel model) {
+    final selectedDatum = model.selectedDatum;
+
+    DateTime time;
+    String selected;
+
+    // We get the model that updated with a list of [SeriesDatum] which is
+    // simply a pair of series & datum.
+    //
+    // Walk the selection updating the measures map, storing off the sales and
+    // series name for each selection point.
+    if (selectedDatum.isNotEmpty) {
+      time = selectedDatum.first.datum.time;
+      selectedDatum.forEach((charts.SeriesDatum datumPair) {
+        selected = datumPair.datum.cases.toString();
+      });
+    }
+
+    // Request a build.
+    setState(() {
+      _timeSelected = time;
+      _pointSelected = selected;
+    });
+  }
+
+  String formatted(String str){
+    int val = int.parse(str);
+    return new NumberFormat.decimalPattern('pt').format(val).toString();
+  }
+
   @override
   Widget build(BuildContext context) {
 
@@ -238,6 +272,7 @@ class _ChartsPageState extends State<ChartsPage> {
                         onChanged: (newValue) {
                           setState(() {
                             _selectedType = newValue;
+                            _timeSelected = null;
                           });
                           updateChartInfo();
                         },
@@ -254,6 +289,7 @@ class _ChartsPageState extends State<ChartsPage> {
                         onChanged: (newValue) {
                           setState(() {
                             _selectedRegion = newValue;
+                            _timeSelected = null;
                           });
                           updateChartInfo();
                         },
@@ -330,6 +366,7 @@ class _ChartsPageState extends State<ChartsPage> {
                       onPressed: () {
                         setState(() {
                           chartIndex = 0;
+                          _timeSelected = null;
                         });
                       },
                     ),
@@ -345,6 +382,7 @@ class _ChartsPageState extends State<ChartsPage> {
                       onPressed: () {
                         setState(() {
                           chartIndex = 1;
+                          _timeSelected = null;
                         });
                       },
                     ),
@@ -361,6 +399,7 @@ class _ChartsPageState extends State<ChartsPage> {
                       onPressed: () {
                         setState(() {
                           chartIndex = 2;
+                          _timeSelected = null;
                         });
                       },
                     ),
@@ -374,6 +413,12 @@ class _ChartsPageState extends State<ChartsPage> {
                     animate: false,
                     defaultRenderer: new charts.LineRendererConfig(includePoints: true),
                     dateTimeFactory: SimpleDateTimeFactory(),
+                    selectionModels: [
+                      new charts.SelectionModelConfig(
+                        type: charts.SelectionModelType.info,
+                        changedListener: _onSelectionChanged,
+                      )
+                    ],
                   ) :
                   (Center(
                       child: Text(
@@ -382,8 +427,20 @@ class _ChartsPageState extends State<ChartsPage> {
                       ),
                     )
                   ), 
-                ),
-              ),
+                )),
+                Center(
+                  child:
+                    Padding(
+                    padding: new EdgeInsets.all(16.0),
+                    child: Text(
+                      _timeSelected != null ? 
+                      formatted(_pointSelected) + " casos em " + formatDate(_timeSelected, [dd, '/', mm, '/', yyyy]) :
+                      "Toque nos pontos para + info",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ),
+                )
             ]),
         ),
       ), isLoading: _loading, opacity: 0.7, color: Colors.white,)

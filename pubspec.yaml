@@ -30,6 +30,8 @@ dependencies:
 
   charts_flutter: ^0.9.0
 
+  date_format: ^1.0.8
+
   splashscreen: ^1.2.0
 
   flutter_typeahead: ^1.8.0
