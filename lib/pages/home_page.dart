@@ -15,7 +15,8 @@ class HomePage extends StatefulWidget {
     new DrawerItem("Casos de COVID-19 Brasil", Icons.location_on),
     new DrawerItem("Estatísticas", Icons.show_chart),
     new DrawerItem("Índice de Isolamento", Icons.insert_chart),
-    new DrawerItem("Ministério da Saúde", Icons.new_releases)
+    new DrawerItem("Ministério da Saúde", Icons.healing),
+    new DrawerItem("Dados Oficiais", Icons.info_outline),
   ];
   @override
   State<StatefulWidget> createState() {
@@ -60,6 +61,14 @@ class _HomePageState extends State<HomePage> {
             },
           )
         )));
+        case 4:
+        return Container(
+          child: WebView(
+            key: new Key('covidGovIframe'),
+            initialUrl: Uri.dataFromString('<html><body style="margin: 0; padding: 0;"><iframe style="width:100%;height:100%" src="https://covid.saude.gov.br/"></iframe></body></html>', mimeType: 'text/html').toString(),
+            javascriptMode: JavascriptMode.unrestricted,
+          )
+        );
       default:
         return new Text("Error");
     }

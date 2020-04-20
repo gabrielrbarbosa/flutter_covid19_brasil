@@ -13,8 +13,8 @@ class ChartsPage extends StatefulWidget {
 }
 
 class _ChartsPageState extends State<ChartsPage> {
-  int chartIndex = 1;
-  bool showChart = false, _loading = true;
+  int chartIndex = 0;
+  bool showChart = false, _loading = true, showAnimation = true;
   List<TimeSeriesCovid> lineTotalCases = [], lineNewCases = [], lineFatalCases = [];
   List<charts.Series<dynamic, DateTime>> lineChart = [];
   List<String> _locations = ['País', 'Estados', 'Cidades'];
@@ -30,8 +30,8 @@ class _ChartsPageState extends State<ChartsPage> {
   }
 
   void downloadFiles() async{
-    fetchCsvFile('https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-cities-time_changesOnly.csv', 'cases-brazil-cities-time.csv');
     fetchCsvFile('https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-states.csv', 'cases-brazil-states.csv');
+    fetchCsvFile('https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-cities-time_changesOnly.csv', 'cases-brazil-cities-time.csv');
   }
 
   fetchCsvFile(link, filename) async {      
@@ -75,6 +75,7 @@ class _ChartsPageState extends State<ChartsPage> {
       setState(() {
         _locationsCities = _locationsCities;
       });
+      updateChartInfo();
     } 
     else if(filename == "cases-brazil-states.csv"){
       fileDataStates = txt.split("\n");
@@ -98,7 +99,6 @@ class _ChartsPageState extends State<ChartsPage> {
       setState(() {
         _locationsStates = _locationsStates;
       });
-      updateChartInfo();
     }
   }
 
@@ -179,11 +179,7 @@ class _ChartsPageState extends State<ChartsPage> {
       lineNewCases = newCases;
       lineFatalCases = fatalCases;
       showChart = true;
-    });
-    Future.delayed(const Duration(milliseconds: 300), () {
-      setState(() {
-        _loading = false;
-      });
+      _loading = false;
     });
   }
 
@@ -278,6 +274,7 @@ class _ChartsPageState extends State<ChartsPage> {
                           setState(() {
                             _selectedType = newValue;
                             _timeSelected = null;
+                            showAnimation = false;
                           });
                           updateChartInfo();
                         },
@@ -372,6 +369,7 @@ class _ChartsPageState extends State<ChartsPage> {
                         setState(() {
                           chartIndex = 0;
                           _timeSelected = null;
+                          showAnimation = false;
                         });
                       },
                     ),
@@ -388,6 +386,7 @@ class _ChartsPageState extends State<ChartsPage> {
                         setState(() {
                           chartIndex = 1;
                           _timeSelected = null;
+                          showAnimation = false;
                         });
                       },
                     ),
@@ -405,6 +404,7 @@ class _ChartsPageState extends State<ChartsPage> {
                         setState(() {
                           chartIndex = 2;
                           _timeSelected = null;
+                          showAnimation = false;
                         });
                       },
                     ),
@@ -415,7 +415,8 @@ class _ChartsPageState extends State<ChartsPage> {
                   padding: const EdgeInsets.all(8.0),
                   child: showChart ? charts.TimeSeriesChart(
                     lineChart,
-                    animate: false,
+                    animate: showAnimation,
+                    animationDuration: Duration(milliseconds: 500),
                     defaultRenderer: new charts.LineRendererConfig(includePoints: true),
                     dateTimeFactory: SimpleDateTimeFactory(),
                     selectionModels: [
@@ -448,7 +449,7 @@ class _ChartsPageState extends State<ChartsPage> {
                 )
             ]),
         ),
-      ), isLoading: _loading, opacity: 0.7, color: Colors.white,)
+      ), isLoading: _loading, opacity: 0, color: Colors.white,)
     );
   }
 }
