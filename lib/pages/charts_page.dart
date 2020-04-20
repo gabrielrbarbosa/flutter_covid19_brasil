@@ -14,7 +14,7 @@ class ChartsPage extends StatefulWidget {
 
 class _ChartsPageState extends State<ChartsPage> {
   int chartIndex = 0;
-  bool showChart = false, _loading = true, showAnimation = true;
+  bool showChart = false, _loading = true;
   List<TimeSeriesCovid> lineTotalCases = [], lineNewCases = [], lineFatalCases = [];
   List<charts.Series<dynamic, DateTime>> lineChart = [];
   List<String> _locations = ['País', 'Estados', 'Cidades'];
@@ -99,6 +99,7 @@ class _ChartsPageState extends State<ChartsPage> {
       setState(() {
         _locationsStates = _locationsStates;
       });
+      updateChartInfo();
     }
   }
 
@@ -109,9 +110,11 @@ class _ChartsPageState extends State<ChartsPage> {
 
     switch(_selectedType){
       case 'País':
-        fileData = fileDataStates;
-        columnTitles = fileData[0].split(",");
-        index = columnTitles.indexOf("state");
+        if(fileDataStates.length > 0){
+          fileData = fileDataStates;
+          columnTitles = fileData[0].split(",");
+          index = columnTitles.indexOf("state");
+        }
         setState(() {
           if(_locationsRegions != _locationsStates){
             _locationsRegions = _locationsStates;
@@ -124,9 +127,11 @@ class _ChartsPageState extends State<ChartsPage> {
         });
       break;
       case 'Estados':
-        fileData = fileDataStates;
-        columnTitles = fileData[0].split(",");
-        index = columnTitles.indexOf("state");
+        if(fileDataStates.length > 0){
+          fileData = fileDataStates;
+          columnTitles = fileData[0].split(",");
+          index = columnTitles.indexOf("state");
+        }
         setState(() {
           if(_locationsRegions != _locationsStates){
             _locationsRegions = _locationsStates;
@@ -139,10 +144,11 @@ class _ChartsPageState extends State<ChartsPage> {
         });
       break;
       case 'Cidades':
-        fileData = fileDataCities;
-        columnTitles = fileData[0].split(",");
-        index = columnTitles.indexOf("city");
-        
+        if(fileDataStates.length > 0){
+          fileData = fileDataCities;
+          columnTitles = fileData[0].split(",");
+          index = columnTitles.indexOf("city");
+        }
         setState(() {
           if(_locationsRegions != _locationsCities){
             _locationsRegions = _locationsCities;
@@ -274,7 +280,6 @@ class _ChartsPageState extends State<ChartsPage> {
                           setState(() {
                             _selectedType = newValue;
                             _timeSelected = null;
-                            showAnimation = false;
                           });
                           updateChartInfo();
                         },
@@ -369,7 +374,6 @@ class _ChartsPageState extends State<ChartsPage> {
                         setState(() {
                           chartIndex = 0;
                           _timeSelected = null;
-                          showAnimation = false;
                         });
                       },
                     ),
@@ -386,7 +390,6 @@ class _ChartsPageState extends State<ChartsPage> {
                         setState(() {
                           chartIndex = 1;
                           _timeSelected = null;
-                          showAnimation = false;
                         });
                       },
                     ),
@@ -404,7 +407,6 @@ class _ChartsPageState extends State<ChartsPage> {
                         setState(() {
                           chartIndex = 2;
                           _timeSelected = null;
-                          showAnimation = false;
                         });
                       },
                     ),
@@ -415,8 +417,7 @@ class _ChartsPageState extends State<ChartsPage> {
                   padding: const EdgeInsets.all(8.0),
                   child: showChart ? charts.TimeSeriesChart(
                     lineChart,
-                    animate: showAnimation,
-                    animationDuration: Duration(milliseconds: 500),
+                    animate: false,
                     defaultRenderer: new charts.LineRendererConfig(includePoints: true),
                     dateTimeFactory: SimpleDateTimeFactory(),
                     selectionModels: [
