@@ -18,7 +18,7 @@ class _ChartsPageState extends State<ChartsPage> {
   List<TimeSeriesCovid> lineTotalCases = [], lineNewCases = [], lineFatalCases = [];
   List<charts.Series<dynamic, DateTime>> lineChart = [];
   List<String> _locations = ['País', 'Estados', 'Cidades'];
-  List<String> _locationsStates = [], _locationsRegions = [], _locationsCities = [];
+  List<String> _locationsStates = [], _locationsRegions = [], _locationsCities = [], _locationsCitiesLoad = [];
   String _selectedType = 'País', _selectedRegion = 'TOTAL', _lastSelectedLocation;
   List fileDataCities, fileDataStates;
   DateTime _timeSelected;
@@ -30,7 +30,7 @@ class _ChartsPageState extends State<ChartsPage> {
   }
 
   void downloadFiles() async{
-    fetchCsvFile('https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-cities-time.csv', 'cases-brazil-cities-time.csv');
+    fetchCsvFile('https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-cities-time_changesOnly.csv', 'cases-brazil-cities-time.csv');
     fetchCsvFile('https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-states.csv', 'cases-brazil-states.csv');
   }
 
@@ -58,8 +58,13 @@ class _ChartsPageState extends State<ChartsPage> {
         // Get all locations and store in dropdown list
         if(count > 1){
           var info = strRow.split(",");
-          if(!_locationsCities.contains(info[columnTitles.indexOf("city")]) && info[columnTitles.indexOf("city")] != "TOTAL"){
-            _locationsCities.add(info[columnTitles.indexOf("city")]);
+
+          if(!info[columnTitles.indexOf("city")].contains("INDEFINIDA")){
+            if(!_locationsCitiesLoad.contains(info[columnTitles.indexOf("city")])){
+              _locationsCitiesLoad.add(info[columnTitles.indexOf("city")]);
+            } else if(_locationsCitiesLoad.contains(info[columnTitles.indexOf("city")]) && !_locationsCities.contains(info[columnTitles.indexOf("city")])){
+              _locationsCities.add(info[columnTitles.indexOf("city")]);
+            }
           }
         }
         count++;
@@ -175,7 +180,7 @@ class _ChartsPageState extends State<ChartsPage> {
       lineFatalCases = fatalCases;
       showChart = true;
     });
-    Future.delayed(const Duration(milliseconds: 500), () {
+    Future.delayed(const Duration(milliseconds: 300), () {
       setState(() {
         _loading = false;
       });
