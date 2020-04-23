@@ -134,23 +134,21 @@ class _HomePageState extends State<HomePage> {
   var drawerOptions = <Widget>[];
     for (var i = 0; i < widget.drawerItems.length; i++) {
       var d = widget.drawerItems[i];
-        drawerOptions.add(
-          new ListTile(
-            leading: new Icon(d.icon),
-            title: new Text(d.title),
-            selected: i == _selectedDrawerIndex,
-            onTap: () => _onSelectItem(i),
-          )
-        );
-      }
-      drawerOptions.add(ListTile(
-            leading: new Icon(Icons.info_outline),
-            title: new Text("Sobre o Aplicativo"),
-            onTap: () => aboutApp(),
-          )
+      drawerOptions.add(
+        new ListTile(
+          leading: new Icon(d.icon),
+          title: new Text(d.title),
+          selected: i == _selectedDrawerIndex,
+          onTap: () => _onSelectItem(i),
+        )
       );
-    
-
+    }
+    drawerOptions.add(ListTile(
+          leading: new Icon(Icons.info_outline),
+          title: new Text("Sobre o Aplicativo"),
+          onTap: () => aboutApp(),
+        )
+    );
     return new Scaffold(
         key: _scaffoldKey,
         appBar: new AppBar(

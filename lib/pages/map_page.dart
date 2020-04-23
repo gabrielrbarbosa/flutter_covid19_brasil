@@ -23,9 +23,9 @@ class _MapPageState extends State<MapPage>{
   String _mapStyle;
 
   /// Map loading flag
-  bool _isMapLoading = true;
   bool _areMarkersLoading = true;
   BitmapDescriptor bitmapIconCity, bitmapIconState, bitmapIconCountry;
+  String errorMsg;
 
   Map<String, dynamic> _countryInfo = {'cases': 0, 'active': 0, 'recovered': 0, 'deaths': 0, 'fatality': 0, 'tests': 0,
                                       'casesPerOneMillion' : 0, 'deathsPerOneMillion' : 0, 'testsPerOneMillion' : 0};
@@ -78,6 +78,9 @@ class _MapPageState extends State<MapPage>{
       _globalInfo = jsonResponse;
       _globalInfo['fatality'] = ((_globalInfo['deaths'] / _globalInfo['cases']) * 100).toStringAsFixed(2);
     } else {
+      setState(() {
+        errorMsg = 'Erro (' + response.statusCode.toString() + '): ' + response.body;
+      });
       throw Exception('Erro ao carregar informações.');
     }
   }
@@ -90,6 +93,9 @@ class _MapPageState extends State<MapPage>{
       _countryInfo = jsonResponse;
       _countryInfo['fatality'] = ((_countryInfo['deaths'] / _countryInfo['cases']) * 100).toStringAsFixed(2);
     } else {
+      setState(() {
+        errorMsg = 'Erro (' + response.statusCode.toString() + '): ' + response.body;
+      });
       throw Exception('Erro ao carregar informações.');
     }
   }
@@ -114,6 +120,9 @@ class _MapPageState extends State<MapPage>{
         _areMarkersLoading = false;
       });
     } else {
+      setState(() {
+        errorMsg = 'Erro (' + response.statusCode.toString() + '): ' + response.body;
+      });
       throw Exception('Erro ao carregar informações.');
     }
   }
@@ -140,6 +149,9 @@ class _MapPageState extends State<MapPage>{
         _areMarkersLoading = false;
       });
     } else {
+      setState(() {
+        errorMsg = 'Erro (' + response.statusCode.toString() + '): ' + response.body;
+      });
       throw Exception('Erro ao carregar informações.');
     }
   }
@@ -151,6 +163,9 @@ class _MapPageState extends State<MapPage>{
       var txt = response.body;
       _createMarkers(txt, filename);
     } else {
+      setState(() {
+        errorMsg = 'Erro (' + response.statusCode.toString() + '): ' + response.body;
+      });
       throw Exception('Erro ao carregar informações.');
     }
   }
@@ -225,7 +240,6 @@ class _MapPageState extends State<MapPage>{
           setState(() {
             markers =  markers;
             _areMarkersLoading = false;
-            _isMapLoading = false;
           });
         }
         count++;
@@ -246,7 +260,7 @@ class _MapPageState extends State<MapPage>{
         children: <Widget>[
           // Google Map widget
           Opacity(
-            opacity: _isMapLoading ? 0 : 1,
+            opacity: _areMarkersLoading ? 0 : 1,
             child: GoogleMap(
               mapToolbarEnabled: false,
               minMaxZoomPreference: new MinMaxZoomPreference(1.0, 12.0),
@@ -271,6 +285,29 @@ class _MapPageState extends State<MapPage>{
               child: Details(report: _globalInfo, reportBR: _countryInfo),
             ),
           ),
+
+          if(errorMsg != null)
+          (AlertDialog(
+            title: Text('Aviso'),
+            content: SingleChildScrollView(
+              child: ListBody(
+                children: <Widget>[
+                  Text(errorMsg),
+                  Text('Verifique sua conexão com a Internet ou tente novamente mais tarde.'),
+                ],
+              ),
+            ),
+            actions: <Widget>[
+              FlatButton(
+                child: Text('OK'),
+                onPressed: () {
+                  setState(() {
+                    errorMsg = null;
+                  });
+                },
+              ),
+            ],
+          )),
 
           // Map markers loading indicator
           if (_areMarkersLoading)
