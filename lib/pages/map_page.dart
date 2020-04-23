@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:covid_19_brasil/model/pin_information.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import '../states.dart';
-import 'info_widget.dart';
+import '../model/info_widget.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
@@ -17,10 +18,12 @@ class MapPage extends StatefulWidget {
 class _MapPageState extends State<MapPage>{
   final Completer<GoogleMapController> _mapController = Completer();
 
-  /// Set of displayed markers and cluster markers on the map
+  /// Set of displayed markers on the map
   List<Marker> markers = <Marker>[];
   double _currentZoom = 4;
   String _mapStyle;
+  PinInformation currentlySelectedPin = PinInformation(pinPath: '', icon: null, report: {'cases': 0, 'deaths': 0}, locationName: '', labelColor: Colors.grey);
+  double pinPillPosition = -100;
 
   /// Map loading flag
   bool _areMarkersLoading = true;
@@ -106,12 +109,27 @@ class _MapPageState extends State<MapPage>{
     if (response.statusCode == 200) {
       var jsonResponse = json.decode(response.body);
       for(var country in jsonResponse){
+        LatLng location = new LatLng(double.parse(country['countryInfo']['lat'].toString()), double.parse(country['countryInfo']['long'].toString()));
+
+        PinInformation pinInfo = new PinInformation(
+          locationName: country['country'].toString(),
+          icon: new Icon(Icons.info, color: Colors.blue[800], size: 20,),
+          pinPath: "assets/images/pin-country.png",
+          report: {'cases': formatted(country['cases'].toString()), 'deaths': formatted(country['deaths'].toString())},
+          labelColor: Colors.blue[800]
+        );
         markers.add(
           Marker(
             markerId: new MarkerId(country['country'].toString()),
-            position: new LatLng(double.parse(country['countryInfo']['lat'].toString()), double.parse(country['countryInfo']['long'].toString())),
-            infoWindow: new InfoWindow(title: country['country'], snippet: 'Total: ' + formatted(country['cases'].toString()) + ' / ' + 'Fatais: ' + formatted(country['deaths'].toString())),
-            icon: bitmapIconCountry
+            position: location,
+            //infoWindow: new InfoWindow(title: country['country'], snippet: 'Total: ' + formatted(country['cases'].toString()) + ' / ' + 'Fatais: ' + formatted(country['deaths'].toString())),
+            icon: bitmapIconCountry,
+            onTap: () {
+              setState(() {
+                currentlySelectedPin = pinInfo;
+                pinPillPosition = 0;
+              });
+            },
           )
         );
       }
@@ -134,12 +152,26 @@ class _MapPageState extends State<MapPage>{
       var jsonResponse = json.decode(response.body);
       for(var country in jsonResponse){
         if(country['province'] != 'null' && country['coordinates']['latitude'] != ''){
+          LatLng location = LatLng(double.parse(country['coordinates']['latitude']), double.parse(country['coordinates']['longitude']));
+
+          PinInformation pinInfo = new PinInformation(
+            locationName: country['province'].toString(),
+            icon: new Icon(Icons.info, color: Colors.green, size: 20,),
+            pinPath: "assets/images/pin-state.png",
+            report: {'cases': formatted(country['stats']['confirmed'].toString()), 'deaths': formatted(country['stats']['deaths'].toString())},
+          );
           markers.add(
             Marker(
               markerId: new MarkerId(country['province'].toString()),
-              position: new LatLng(double.parse(country['coordinates']['latitude']), double.parse(country['coordinates']['longitude'])),
-              infoWindow: new InfoWindow(title: country['province'], snippet: 'Total: ' + formatted(country['stats']['confirmed'].toString()) + ' / ' + 'Fatais: ' + formatted(country['stats']['deaths'].toString())),
-              icon: bitmapIconState
+              position: location,
+              //infoWindow: new InfoWindow(title: country['province'], snippet: 'Total: ' + formatted(country['stats']['confirmed'].toString()) + ' / ' + 'Fatais: ' + formatted(country['stats']['deaths'].toString())),
+              icon: bitmapIconState,
+              onTap: () {
+                setState(() {
+                  currentlySelectedPin = pinInfo;
+                  pinPillPosition = 0;
+                });
+              },
             )
           );
         }
@@ -171,7 +203,7 @@ class _MapPageState extends State<MapPage>{
   }
 
   void _createMarkers(txt, filename) async{
-    InfoWindow info;
+    //InfoWindow info;
     var rows = txt.split("\n");
 
     if(filename == 'cases-gps.csv'){
@@ -186,21 +218,33 @@ class _MapPageState extends State<MapPage>{
         
         if(count > 1 && type != 'D0' && type != 'D1'){
           LatLng markerLocation = LatLng(double.parse(city[columnTitles.indexOf("lat")].toString()), double.parse(city[columnTitles.indexOf("lon")].toString()));
-
+          var deaths = '0';
           if(nextType == 'D0' || nextType == 'D1'){
-            var deaths = rows[count].split(',')[columnTitles.indexOf("total")];
-            info = new InfoWindow(title: city[columnTitles.indexOf("name")], snippet: 'Total: ' + formatted(city[columnTitles.indexOf("total")]) + ' / Fatais: ' + formatted(deaths));
+            deaths = rows[count].split(',')[columnTitles.indexOf("total")];
+            //info = new InfoWindow(title: city[columnTitles.indexOf("name")], snippet: 'Total: ' + formatted(city[columnTitles.indexOf("total")]) + ' / Fatais: ' + formatted(deaths));
           } else {
-            info = new InfoWindow(title: city[columnTitles.indexOf("name")], snippet: 'Total: ' + formatted(city[columnTitles.indexOf("total")]));
+            //info = new InfoWindow(title: city[columnTitles.indexOf("name")], snippet: 'Total: ' + formatted(city[columnTitles.indexOf("total")]));
           }
           MarkerId markerId = MarkerId((count).toString());
           
+          PinInformation pinInfo = new PinInformation(
+            locationName: city[columnTitles.indexOf("name")],
+            icon: new Icon(Icons.info, color: Colors.red, size: 20,),
+            pinPath: "assets/images/pin-city.png",
+            report: {'cases': formatted(city[columnTitles.indexOf("total")]), 'deaths': formatted(deaths)},
+            labelColor: Colors.red
+          );
           markers.add(
             Marker(
               markerId: markerId,
               position: markerLocation,
-              infoWindow: info,
-              icon: bitmapIconCity
+              icon: bitmapIconCity,
+              onTap: () {
+                setState(() {
+                  currentlySelectedPin = pinInfo;
+                  pinPillPosition = 0;
+                });
+              },
             ),
           );
           
@@ -225,15 +269,27 @@ class _MapPageState extends State<MapPage>{
             states[st[columnTitles.indexOf("state")]].latitute, 
             states[st[columnTitles.indexOf("state")]].longitude
           );
-          InfoWindow info = new InfoWindow(title: states[st[columnTitles.indexOf("state")]].name, snippet: 'Total: ' + formatted(st[columnTitles.indexOf("totalCases")]) + ' / Fatais: ' + formatted(st[columnTitles.indexOf("deaths")]));
+          //InfoWindow info = new InfoWindow(title: states[st[columnTitles.indexOf("state")]].name, snippet: 'Total: ' + formatted(st[columnTitles.indexOf("totalCases")]) + ' / Fatais: ' + formatted(st[columnTitles.indexOf("deaths")]));
           MarkerId markerId = MarkerId(st[columnTitles.indexOf("state")]);
           
+          PinInformation pinInfo = new PinInformation(
+            locationName: states[st[columnTitles.indexOf("state")]].name,
+            icon: new Icon(Icons.info, color: Colors.green, size: 20,),
+            pinPath: "assets/images/pin-state.png",
+            report: {'cases': formatted(st[columnTitles.indexOf("totalCases")]), 'deaths': formatted(st[columnTitles.indexOf("deaths")])},
+            labelColor: Colors.green
+          );
           markers.add(
             Marker(
               markerId: markerId,
               position: markerLocation,
-              infoWindow: info,
-              icon: bitmapIconState
+              icon: bitmapIconState,
+              onTap: () {
+                setState(() {
+                  currentlySelectedPin = pinInfo;
+                  pinPillPosition = 0;
+                });
+              },
             ),
           );
           
@@ -273,6 +329,11 @@ class _MapPageState extends State<MapPage>{
             ),
           ),
 
+          MapPinPillComponent(
+            pinPillPosition: pinPillPosition,
+            currentlySelectedPin: currentlySelectedPin,
+          ),
+          
           SlidingUpPanel(
             backdropOpacity: 0.1,
             color: Colors.grey[100],

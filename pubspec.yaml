@@ -53,8 +53,8 @@ flutter_icons:
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/pin-city.png
-    - assets/images/pin-state.png
-    - assets/images/pin-country.png
-    - assets/images/img_menu.png
-    - assets/map-style.txt
+  - assets/images/pin-city.png
+  - assets/images/pin-state.png
+  - assets/images/pin-country.png
+  - assets/images/img_menu.png
+  - assets/map-style.txt
