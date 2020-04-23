@@ -10,37 +10,19 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # Icon package for iOS
-  cupertino_icons: ^0.1.2
-
-  # Google maps
-  google_maps_flutter: ^0.5.26
-
-  # Map markers clustering
-  fluster: ^1.1.2
-
-  # Cache manager
-  flutter_cache_manager: ^1.1.1
-
-  path_provider: ^1.6.5
-
-  webview_flutter: ^0.3.19+9
-
-  flutter_launcher_icons: ^0.7.4
-
   charts_flutter: ^0.9.0
-
   date_format: ^1.0.8
-
-  splashscreen: ^1.2.0
-
+  firebase_analytics: ^5.0.11
+  firebase_messaging: ^6.0.13
   flutter_typeahead: ^1.8.0
-
+  flutter_cache_manager: ^1.1.1
+  google_maps_flutter: ^0.5.26
   loading_overlay: ^0.2.1
-
-  sliding_up_panel: ^1.0.2
-
   package_info: ^0.4.0+16
+  path_provider: ^1.6.5
+  sliding_up_panel: ^1.0.2
+  splashscreen: ^1.2.0
+  webview_flutter: ^0.3.19+9
 
 dev_dependencies:
   flutter_test:
@@ -53,8 +35,8 @@ flutter_icons:
 flutter:
   uses-material-design: true
   assets:
-  - assets/images/pin-city.png
-  - assets/images/pin-state.png
-  - assets/images/pin-country.png
-  - assets/images/img_menu.png
-  - assets/map-style.txt
+    - assets/images/pin-city.png
+    - assets/images/pin-state.png
+    - assets/images/pin-country.png
+    - assets/images/img_menu.png
+    - assets/map-style.txt

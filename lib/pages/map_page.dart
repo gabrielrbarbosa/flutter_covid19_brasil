@@ -22,7 +22,7 @@ class _MapPageState extends State<MapPage>{
   List<Marker> markers = <Marker>[];
   double _currentZoom = 4;
   String _mapStyle;
-  PinInformation currentlySelectedPin = PinInformation(pinPath: '', icon: null, report: {'cases': 0, 'deaths': 0}, locationName: '', labelColor: Colors.grey);
+  PinInformation currentlySelectedPin = PinInformation(pinPath: 'assets/images/pin-country.png', report: {'cases': 0, 'deaths': 0}, locationName: '', labelColor: Colors.grey);
   double pinPillPosition = -100;
 
   /// Map loading flag
@@ -113,7 +113,6 @@ class _MapPageState extends State<MapPage>{
 
         PinInformation pinInfo = new PinInformation(
           locationName: country['country'].toString(),
-          icon: new Icon(Icons.info, color: Colors.blue[800], size: 20,),
           pinPath: "assets/images/pin-country.png",
           report: {'cases': formatted(country['cases'].toString()), 'deaths': formatted(country['deaths'].toString())},
           labelColor: Colors.blue[800]
@@ -156,9 +155,9 @@ class _MapPageState extends State<MapPage>{
 
           PinInformation pinInfo = new PinInformation(
             locationName: country['province'].toString(),
-            icon: new Icon(Icons.info, color: Colors.green, size: 20,),
             pinPath: "assets/images/pin-state.png",
             report: {'cases': formatted(country['stats']['confirmed'].toString()), 'deaths': formatted(country['stats']['deaths'].toString())},
+            labelColor: Colors.green
           );
           markers.add(
             Marker(
@@ -229,7 +228,6 @@ class _MapPageState extends State<MapPage>{
           
           PinInformation pinInfo = new PinInformation(
             locationName: city[columnTitles.indexOf("name")],
-            icon: new Icon(Icons.info, color: Colors.red, size: 20,),
             pinPath: "assets/images/pin-city.png",
             report: {'cases': formatted(city[columnTitles.indexOf("total")]), 'deaths': formatted(deaths)},
             labelColor: Colors.red
@@ -274,7 +272,6 @@ class _MapPageState extends State<MapPage>{
           
           PinInformation pinInfo = new PinInformation(
             locationName: states[st[columnTitles.indexOf("state")]].name,
-            icon: new Icon(Icons.info, color: Colors.green, size: 20,),
             pinPath: "assets/images/pin-state.png",
             report: {'cases': formatted(st[columnTitles.indexOf("totalCases")]), 'deaths': formatted(st[columnTitles.indexOf("deaths")])},
             labelColor: Colors.green
