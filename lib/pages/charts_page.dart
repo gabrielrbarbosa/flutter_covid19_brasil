@@ -1,10 +1,12 @@
-import 'package:date_format/date_format.dart';
-import 'package:flutter_typeahead/flutter_typeahead.dart';
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:charts_flutter/flutter.dart' as charts;
-import 'package:loading_overlay/loading_overlay.dart';
+import 'package:date_format/date_format.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:loading_overlay/loading_overlay.dart';
+import 'package:vibration/vibration.dart';
+
 import '../model/line_chart.dart';
 
 class ChartsPage extends StatefulWidget {
@@ -13,16 +15,18 @@ class ChartsPage extends StatefulWidget {
 }
 
 class _ChartsPageState extends State<ChartsPage> {
-  String chartIndex = 'Casos Confirmados';
+  String chartIndex = 'Confirmados';
   bool showChart = false, _loading = true, showBarChart = false;
 
   List<TimeSeriesCovid> lineTotalCases = [], lineNewCases = [], lineTotalDeaths = [], lineNewDeaths = [];
+  List<TimeSeriesCovidDouble> lineFatality = [];
   List<charts.Series<dynamic, DateTime>> lineChart = [];
 
   String _selectedType = 'País', _selectedRegion = 'TOTAL', _lastSelectedLocation, _pointSelected, errorMsg;
   List<String> _locations = ['País', 'Estados', 'Cidades'], _locationsStates = [], _locationsRegions = [], _locationsCities = [], _locationsCitiesLoad = [];
   List fileDataCities, fileDataStates;
   DateTime _timeSelected;
+  var lineChartWidget;
 
   void initState() {  
     super.initState();
@@ -78,6 +82,7 @@ class _ChartsPageState extends State<ChartsPage> {
       setState(() {
         _locationsCities = _locationsCities;
       });
+      changeChart(chartIndex);
       updateChartInfo();
     } 
     else if(filename == "cases-brazil-states.csv"){
@@ -109,6 +114,7 @@ class _ChartsPageState extends State<ChartsPage> {
   void updateChartInfo(){
     int count = 1, index;
     List<TimeSeriesCovid> totalCases = [], newCases = [], totalDeaths = [], newDeaths = [];
+    List<TimeSeriesCovidDouble> fatality = [];
     List fileData, columnTitles;
 
     switch(_selectedType){
@@ -121,7 +127,7 @@ class _ChartsPageState extends State<ChartsPage> {
         setState(() {
           if(_locationsRegions != _locationsStates){
             _locationsRegions = _locationsStates;
-            chartIndex = 'Casos Confirmados';
+            chartIndex = 'Confirmados';
           }
           if(_lastSelectedLocation != _selectedType){
             _selectedRegion = 'TOTAL';
@@ -138,7 +144,7 @@ class _ChartsPageState extends State<ChartsPage> {
         setState(() {
           if(_locationsRegions != _locationsStates){
             _locationsRegions = _locationsStates;
-            chartIndex = 'Casos Confirmados';
+            chartIndex = 'Confirmados';
           }
           if(_lastSelectedLocation != _selectedType){
             _selectedRegion = 'PR';
@@ -155,7 +161,7 @@ class _ChartsPageState extends State<ChartsPage> {
         setState(() {
           if(_locationsRegions != _locationsCities){
             _locationsRegions = _locationsCities;
-            chartIndex = 'Casos Confirmados';
+            chartIndex = 'Confirmados';
           }
           if(_lastSelectedLocation != _selectedType){
             _selectedRegion = "Londrina/PR";
@@ -173,11 +179,19 @@ class _ChartsPageState extends State<ChartsPage> {
       var info = strRow.split(",");
       if(count > 1){
         if(info[index] == _selectedRegion){
+          double fatalRatio = 0;
+          if(int.parse(info[columnTitles.indexOf('deaths')]) > 0){
+            fatalRatio = (int.parse(info[columnTitles.indexOf('deaths')]) / int.parse(info[columnTitles.indexOf('totalCases')]) * 100);
+            String fatalStr = fatalRatio.toStringAsFixed(2);
+            fatalRatio = double.parse(fatalStr);
+          }
+
           String date = info[columnTitles.indexOf('date')];
-          if(columnTitles.indexOf('totalCases') != -1) totalCases.add(new TimeSeriesCovid(DateTime.parse(date), int.parse(info[columnTitles.indexOf('totalCases')])));
-          if(columnTitles.indexOf('newCases') != -1) newCases.add(new TimeSeriesCovid(DateTime.parse(date), int.parse(info[columnTitles.indexOf('newCases')])));
-          if(columnTitles.indexOf('deaths') != -1) totalDeaths.add(new TimeSeriesCovid(DateTime.parse(date), int.parse(info[columnTitles.indexOf('deaths')])));
-          if(columnTitles.indexOf('newDeaths') != -1) newDeaths.add(new TimeSeriesCovid(DateTime.parse(date), int.parse(info[columnTitles.indexOf('newDeaths')])));
+          if(int.parse(info[columnTitles.indexOf('totalCases')]) > 0) totalCases.add(new TimeSeriesCovid(DateTime.parse(date), int.parse(info[columnTitles.indexOf('totalCases')])));
+          if(int.parse(info[columnTitles.indexOf('newCases')]) > 0) newCases.add(new TimeSeriesCovid(DateTime.parse(date), int.parse(info[columnTitles.indexOf('newCases')])));
+          if(int.parse(info[columnTitles.indexOf('deaths')]) > 0) totalDeaths.add(new TimeSeriesCovid(DateTime.parse(date), int.parse(info[columnTitles.indexOf('deaths')])));
+          if(int.parse(info[columnTitles.indexOf('newDeaths')]) > 0) newDeaths.add(new TimeSeriesCovid(DateTime.parse(date), int.parse(info[columnTitles.indexOf('newDeaths')])));
+          if(int.parse(info[columnTitles.indexOf('deaths')]) > 0) fatality.add(new TimeSeriesCovidDouble(DateTime.parse(date), fatalRatio));
           return true;
         }
       }
@@ -189,6 +203,7 @@ class _ChartsPageState extends State<ChartsPage> {
       lineNewCases = newCases;
       lineTotalDeaths = totalDeaths;
       lineNewDeaths = newDeaths;
+      lineFatality = fatality;
       showChart = true;
       _loading = false;
     });
@@ -204,26 +219,87 @@ class _ChartsPageState extends State<ChartsPage> {
 
   _onSelectionChanged(charts.SelectionModel model) {
     final selectedDatum = model.selectedDatum;
-
     DateTime time;
     String selected;
 
-    // We get the model that updated with a list of [SeriesDatum] which is
-    // simply a pair of series & datum.
-    //
-    // Walk the selection updating the measures map, storing off the sales and
-    // series name for each selection point.
     if (selectedDatum.isNotEmpty) {
       time = selectedDatum.first.datum.time;
       selectedDatum.forEach((charts.SeriesDatum datumPair) {
-        selected = datumPair.datum.cases.toString();
+        if(chartIndex == 'Letalidade'){
+          selected = datumPair.datum.ratio.toString() + '% de ';
+        } else{
+          selected = formatted(datumPair.datum.cases.toString());
+        }
+      });
+      Vibration.vibrate(duration: 10, amplitude: 255);
+
+      setState(() {
+        _timeSelected = time;
+        _pointSelected = selected;
       });
     }
+  }
 
-    // Request a build.
+  changeChart(chartName){
+    var chartColor = charts.MaterialPalette.red.shadeDefault;
+    var chartData = lineTotalCases;
+    var showBars = false;
+
+    switch(chartName){
+      case 'Novos Casos':
+        chartData = lineNewCases;
+        chartColor = charts.MaterialPalette.blue.shadeDefault;
+        showBars = true;
+      break;
+      case 'Fatais':
+        chartData = lineTotalDeaths;
+        chartColor = charts.MaterialPalette.indigo.shadeDefault;
+      break;
+      case 'Novos Óbitos':
+        chartData = lineNewDeaths;
+        chartColor = charts.MaterialPalette.blue.shadeDefault;
+        showBars = true;
+      break;
+      case 'Letalidade':
+        chartColor = charts.MaterialPalette.cyan.shadeDefault;
+      break;
+    }
+    
+    if(chartName == 'Letalidade'){
+      lineChart = [
+        charts.Series<TimeSeriesCovidDouble, DateTime>(
+        id: chartName,
+        colorFn: (_, __) => chartColor,
+        domainFn: (TimeSeriesCovidDouble register, _) => register.time,
+        measureFn: (TimeSeriesCovidDouble register, _) => register.ratio,
+        data: lineFatality,
+      )];
+    } else{
+      lineChart = [
+        charts.Series<TimeSeriesCovid, DateTime>(
+        id: chartName,
+        colorFn: (_, __) => chartColor,
+        domainFn: (TimeSeriesCovid register, _) => register.time,
+        measureFn: (TimeSeriesCovid register, _) => register.cases,
+        data: chartData,
+      )];
+    }
+
     setState(() {
-      _timeSelected = time;
-      _pointSelected = selected;
+      _timeSelected = null;
+      showBarChart = showBars;
+      chartIndex = chartName;
+      lineChartWidget = new charts.TimeSeriesChart(
+        lineChart,
+        animate: false,
+        defaultRenderer: (showBarChart ? new charts.BarRendererConfig<DateTime>() : new charts.LineRendererConfig(includePoints: true, includeLine: true)),
+        selectionModels: [
+          new charts.SelectionModelConfig(
+            type: charts.SelectionModelType.info,
+            changedListener: _onSelectionChanged,
+          )
+        ],
+      );
     });
   }
 
@@ -234,61 +310,6 @@ class _ChartsPageState extends State<ChartsPage> {
 
   @override
   Widget build(BuildContext context) {
-
-    switch(chartIndex){
-      case 'Casos Confirmados':
-        lineChart = [charts.Series<TimeSeriesCovid, DateTime>(
-            id: chartIndex,
-            colorFn: (_, __) => charts.MaterialPalette.red.shadeDefault,
-            domainFn: (TimeSeriesCovid register, _) => register.time,
-            measureFn: (TimeSeriesCovid register, _) => register.cases,
-            data: lineTotalCases,
-          )
-        ];
-        setState(() {
-          showBarChart = false;
-        });
-      break;
-      case 'Novos Casos':
-        lineChart = [charts.Series<TimeSeriesCovid, DateTime>(
-            id: chartIndex,
-            colorFn: (_, __) => charts.MaterialPalette.cyan.shadeDefault,
-            domainFn: (TimeSeriesCovid register, _) => register.time,
-            measureFn: (TimeSeriesCovid register, _) => register.cases,
-            data: lineNewCases,
-          ),
-        ];
-        setState(() {
-          showBarChart = true;
-        });
-      break;
-      case 'Óbitos Confirmados':
-        lineChart = [charts.Series<TimeSeriesCovid, DateTime>(
-            id: chartIndex,
-            colorFn: (_, __) => charts.MaterialPalette.red.shadeDefault,
-            domainFn: (TimeSeriesCovid register, _) => register.time,
-            measureFn: (TimeSeriesCovid register, _) => register.cases,
-            data: lineTotalDeaths,
-          ),
-        ];
-        setState(() {
-          showBarChart = false;
-        });
-      break;
-      case 'Novos Óbitos':
-        lineChart = [charts.Series<TimeSeriesCovid, DateTime>(
-            id: chartIndex,
-            colorFn: (_, __) => charts.MaterialPalette.cyan.shadeDefault,
-            domainFn: (TimeSeriesCovid register, _) => register.time,
-            measureFn: (TimeSeriesCovid register, _) => register.cases,
-            data: lineNewDeaths,
-          ),
-        ];
-        setState(() {
-          showBarChart = true;
-        });
-      break;
-    }
 
     return Scaffold(
       body: LoadingOverlay(
@@ -391,85 +412,23 @@ class _ChartsPageState extends State<ChartsPage> {
                 padding: const EdgeInsets.only(left: 16.0, right: 16.0),
                 child: Row(
                   mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: 
                   <Widget>[ 
-                    if(lineTotalCases != null) FlatButton(
-                      shape: RoundedRectangleBorder(
-                          side: BorderSide(color: Colors.black45),
-                          borderRadius: BorderRadius.all(Radius.circular(3))),
-                      child: Text(
-                        'Casos Confirmados',
-                        style: TextStyle(
-                            color:
-                            chartIndex == 'Casos Confirmados' ? Colors.black : Colors.black12),
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          chartIndex = 'Casos Confirmados';
-                          _timeSelected = null;
-                        });
-                      },
-                    ),
-                    if(lineNewCases != null) FlatButton(
-                      shape: RoundedRectangleBorder(
-                          side: BorderSide(color: Colors.black45),
-                          borderRadius: BorderRadius.all(Radius.circular(3))),
-                      child: Text('Novos Casos',
-                          style: TextStyle(
-                              color: chartIndex == 'Novos Casos'
-                                  ? Colors.black
-                                  : Colors.black12)),
-                      onPressed: () {
-                        setState(() {
-                          chartIndex = 'Novos Casos';
-                          _timeSelected = null;
-                        });
-                      },
-                    ),
+                    if(lineTotalCases != null) ChartButtonWidget(chartName: 'Confirmados', chartIndex: this.chartIndex, changeChart: this.changeChart),
+                    if(lineNewCases != null) ChartButtonWidget(chartName: 'Novos Casos', chartIndex: this.chartIndex, changeChart: this.changeChart),
                   ]),
               ),
               Padding(
                 padding: const EdgeInsets.only(left: 16.0, right: 16.0),
                 child: Row(
                   mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: 
                   <Widget>[ 
-                    if(lineTotalDeaths != null) FlatButton(
-                      shape: RoundedRectangleBorder(
-                          side: BorderSide(color: Colors.black45),
-                          borderRadius: BorderRadius.all(Radius.circular(3))),
-                      child: Text(
-                        'Óbitos Confirmados',
-                        style: TextStyle(
-                            color:
-                            chartIndex == 'Óbitos Confirmados' ? Colors.black : Colors.black12),
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          chartIndex = 'Óbitos Confirmados';
-                          _timeSelected = null;
-                        });
-                      },
-                    ),
-                    if(lineNewDeaths != null) FlatButton(
-                      shape: RoundedRectangleBorder(
-                          side: BorderSide(color: Colors.black45),
-                          borderRadius: BorderRadius.all(Radius.circular(3))),
-                      child: Text(
-                        'Novos Óbitos',
-                        style: TextStyle(
-                            color:
-                            chartIndex == 'Novos Óbitos' ? Colors.black : Colors.black12),
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          chartIndex = 'Novos Óbitos';
-                          _timeSelected = null;
-                        });
-                      },
-                    ),
+                    if(lineTotalDeaths != null) ChartButtonWidget(chartName: 'Fatais', chartIndex: this.chartIndex, changeChart: this.changeChart),
+                    if(lineNewDeaths != null) ChartButtonWidget(chartName: 'Novos Óbitos', chartIndex: this.chartIndex, changeChart: this.changeChart),
+                    if(lineFatality != null) ChartButtonWidget(chartName: 'Letalidade', chartIndex: this.chartIndex, changeChart: this.changeChart),
                   ]),
               ),
               if(errorMsg != null)
@@ -499,18 +458,7 @@ class _ChartsPageState extends State<ChartsPage> {
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: showChart ? 
-                  (new charts.TimeSeriesChart(
-                    lineChart,
-                    animate: false,
-                    defaultRenderer: (showBarChart ? new charts.BarRendererConfig<DateTime>() : new charts.LineRendererConfig(includePoints: true, includeLine: true)),
-                    dateTimeFactory: SimpleDateTimeFactory(),
-                    selectionModels: [
-                      new charts.SelectionModelConfig(
-                        type: charts.SelectionModelType.info,
-                        changedListener: _onSelectionChanged,
-                      )
-                    ],
-                  )) :
+                  (lineChartWidget) :
                   (Center(
                       child: Text(
                         "Carregando os dados...",
@@ -525,7 +473,7 @@ class _ChartsPageState extends State<ChartsPage> {
                     padding: new EdgeInsets.all(16.0),
                     child: Text(
                       _timeSelected != null ? 
-                      formatted(_pointSelected) + " " + chartIndex + " em " + formatDate(_timeSelected, [dd, '/', mm, '/', yyyy]) :
+                      _pointSelected + " " + chartIndex + " em " + formatDate(_timeSelected, [dd, '/', mm, '/', yyyy]) :
                       "Toque nos pontos para + info",
                       textAlign: TextAlign.center,
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
@@ -535,6 +483,26 @@ class _ChartsPageState extends State<ChartsPage> {
             ]),
         ),
       ), isLoading: _loading, opacity: 0, color: Colors.white,)
+    );
+  }
+}
+
+class ChartButtonWidget extends StatelessWidget {
+  Function changeChart;
+  final String chartIndex;
+  final String chartName;
+  
+  ChartButtonWidget({ this.changeChart, this.chartIndex, this.chartName });
+
+  Widget build(BuildContext context) {
+    return FlatButton(
+      shape: RoundedRectangleBorder(
+              side: BorderSide(color: Colors.black45),
+              borderRadius: BorderRadius.all(Radius.circular(3))),
+      child: Text(chartName, style: TextStyle(color: chartName == chartIndex ? Colors.black : Colors.black12)),
+      onPressed: () {
+        this.changeChart(chartName);
+      }
     );
   }
 }

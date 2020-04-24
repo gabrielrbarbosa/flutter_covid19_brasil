@@ -1,14 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:covid_19_brasil/model/pin_information.dart';
-import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import '../states.dart';
 import '../model/info_widget.dart';
+import 'package:covid_19_brasil/model/pin_information.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:vibration/vibration.dart';
 
 class MapPage extends StatefulWidget {
   @override
@@ -110,20 +111,23 @@ class _MapPageState extends State<MapPage>{
       var jsonResponse = json.decode(response.body);
       for(var country in jsonResponse){
         LatLng location = new LatLng(double.parse(country['countryInfo']['lat'].toString()), double.parse(country['countryInfo']['long'].toString()));
+        String fatality = ((country['deaths'] / country['cases']) * 100).toStringAsFixed(2);
+        String infoDeaths = formatted(country['deaths'].toString()) + ' (' + fatality + '%)';
+        if(fatality == '0.00') infoDeaths = formatted(country['deaths'].toString());
 
         PinInformation pinInfo = new PinInformation(
           locationName: country['country'].toString(),
           pinPath: "assets/images/pin-country.png",
-          report: {'cases': formatted(country['cases'].toString()), 'deaths': formatted(country['deaths'].toString())},
+          report: {'cases': formatted(country['cases'].toString()), 'deaths': infoDeaths},
           labelColor: Colors.blue[800]
         );
         markers.add(
           Marker(
             markerId: new MarkerId(country['country'].toString()),
             position: location,
-            //infoWindow: new InfoWindow(title: country['country'], snippet: 'Total: ' + formatted(country['cases'].toString()) + ' / ' + 'Fatais: ' + formatted(country['deaths'].toString())),
             icon: bitmapIconCountry,
             onTap: () {
+              Vibration.vibrate(duration: 10, amplitude: 255);
               setState(() {
                 currentlySelectedPin = pinInfo;
                 pinPillPosition = 0;
@@ -152,20 +156,23 @@ class _MapPageState extends State<MapPage>{
       for(var country in jsonResponse){
         if(country['province'] != 'null' && country['coordinates']['latitude'] != ''){
           LatLng location = LatLng(double.parse(country['coordinates']['latitude']), double.parse(country['coordinates']['longitude']));
+          String fatality = ((country['stats']['deaths'] / country['stats']['confirmed']) * 100).toStringAsFixed(2);
+          String infoDeaths = formatted(country['stats']['deaths'].toString()) + ' (' + fatality + '%)';
+          if(fatality == '0.00') infoDeaths = formatted(country['stats']['deaths'].toString());
 
           PinInformation pinInfo = new PinInformation(
             locationName: country['province'].toString(),
             pinPath: "assets/images/pin-state.png",
-            report: {'cases': formatted(country['stats']['confirmed'].toString()), 'deaths': formatted(country['stats']['deaths'].toString())},
+            report: {'cases': formatted(country['stats']['confirmed'].toString()), 'deaths': infoDeaths},
             labelColor: Colors.green
           );
           markers.add(
             Marker(
               markerId: new MarkerId(country['province'].toString()),
               position: location,
-              //infoWindow: new InfoWindow(title: country['province'], snippet: 'Total: ' + formatted(country['stats']['confirmed'].toString()) + ' / ' + 'Fatais: ' + formatted(country['stats']['deaths'].toString())),
               icon: bitmapIconState,
               onTap: () {
+                Vibration.vibrate(duration: 10, amplitude: 10);
                 setState(() {
                   currentlySelectedPin = pinInfo;
                   pinPillPosition = 0;
@@ -218,18 +225,17 @@ class _MapPageState extends State<MapPage>{
         if(count > 1 && type != 'D0' && type != 'D1'){
           LatLng markerLocation = LatLng(double.parse(city[columnTitles.indexOf("lat")].toString()), double.parse(city[columnTitles.indexOf("lon")].toString()));
           var deaths = '0';
-          if(nextType == 'D0' || nextType == 'D1'){
-            deaths = rows[count].split(',')[columnTitles.indexOf("total")];
-            //info = new InfoWindow(title: city[columnTitles.indexOf("name")], snippet: 'Total: ' + formatted(city[columnTitles.indexOf("total")]) + ' / Fatais: ' + formatted(deaths));
-          } else {
-            //info = new InfoWindow(title: city[columnTitles.indexOf("name")], snippet: 'Total: ' + formatted(city[columnTitles.indexOf("total")]));
-          }
-          MarkerId markerId = MarkerId((count).toString());
+          if(nextType == 'D0' || nextType == 'D1') deaths = rows[count].split(',')[columnTitles.indexOf("total")];
           
+          MarkerId markerId = MarkerId((count).toString());
+          String fatality = ((int.parse(deaths) / int.parse(city[columnTitles.indexOf("total")])) * 100).toStringAsFixed(2);
+          String infoDeaths = formatted(deaths) + ' (' + fatality + '%)';
+          if(fatality == '0.00') infoDeaths = formatted(deaths);
+
           PinInformation pinInfo = new PinInformation(
             locationName: city[columnTitles.indexOf("name")],
             pinPath: "assets/images/pin-city.png",
-            report: {'cases': formatted(city[columnTitles.indexOf("total")]), 'deaths': formatted(deaths)},
+            report: {'cases': formatted(city[columnTitles.indexOf("total")]), 'deaths': infoDeaths},
             labelColor: Colors.red
           );
           markers.add(
@@ -238,6 +244,7 @@ class _MapPageState extends State<MapPage>{
               position: markerLocation,
               icon: bitmapIconCity,
               onTap: () {
+                Vibration.vibrate(duration: 10, amplitude: 10);
                 setState(() {
                   currentlySelectedPin = pinInfo;
                   pinPillPosition = 0;
@@ -269,11 +276,14 @@ class _MapPageState extends State<MapPage>{
           );
           //InfoWindow info = new InfoWindow(title: states[st[columnTitles.indexOf("state")]].name, snippet: 'Total: ' + formatted(st[columnTitles.indexOf("totalCases")]) + ' / Fatais: ' + formatted(st[columnTitles.indexOf("deaths")]));
           MarkerId markerId = MarkerId(st[columnTitles.indexOf("state")]);
-          
+          String fatality = ((int.parse(st[columnTitles.indexOf("deaths")]) / int.parse(st[columnTitles.indexOf("totalCases")])) * 100).toStringAsFixed(2);
+          String infoDeaths = formatted(st[columnTitles.indexOf("deaths")]) + ' (' + fatality + '%)';
+          if(fatality == '0.00') infoDeaths = formatted(st[columnTitles.indexOf("deaths")]);
+
           PinInformation pinInfo = new PinInformation(
             locationName: states[st[columnTitles.indexOf("state")]].name,
             pinPath: "assets/images/pin-state.png",
-            report: {'cases': formatted(st[columnTitles.indexOf("totalCases")]), 'deaths': formatted(st[columnTitles.indexOf("deaths")])},
+            report: {'cases': formatted(st[columnTitles.indexOf("totalCases")]), 'deaths': infoDeaths},
             labelColor: Colors.green
           );
           markers.add(
@@ -282,6 +292,7 @@ class _MapPageState extends State<MapPage>{
               position: markerLocation,
               icon: bitmapIconState,
               onTap: () {
+                Vibration.vibrate(duration: 10, amplitude: 10);
                 setState(() {
                   currentlySelectedPin = pinInfo;
                   pinPillPosition = 0;

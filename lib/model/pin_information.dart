@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class PinInformation {
@@ -15,7 +14,11 @@ class MapPinPillComponent extends StatefulWidget {
   double pinPillPosition;
   PinInformation currentlySelectedPin;
 
-  MapPinPillComponent({ this.pinPillPosition, this.currentlySelectedPin });
+  MapPinPillComponent({
+    Key key,
+    this.pinPillPosition,
+    this.currentlySelectedPin,
+  }) : super(key: key);
 
   @override
   State<StatefulWidget> createState() => MapPinPillComponentState();
@@ -35,7 +38,7 @@ class MapPinPillComponentState extends State<MapPinPillComponent> {
           alignment: Alignment.bottomCenter,
           child: Container(
             margin: EdgeInsets.only(left: 20, right: 20, top: 5),
-            height: 60,
+            height: 65,
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.all(Radius.circular(50)),
@@ -62,9 +65,9 @@ class MapPinPillComponentState extends State<MapPinPillComponent> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
-                        Text(widget.currentlySelectedPin.locationName, style: TextStyle(color: widget.currentlySelectedPin.labelColor)),
-                        Text('Casos Confirmados: ${widget.currentlySelectedPin.report['cases'].toString()}', style: TextStyle(fontSize: 13, color: Colors.grey)),
-                        Text('Casos Fatais: ${widget.currentlySelectedPin.report['deaths'].toString()}', style: TextStyle(fontSize: 13, color: Colors.grey)),
+                        Text(widget.currentlySelectedPin.locationName, style: TextStyle(color: widget.currentlySelectedPin.labelColor, fontSize: 14, fontWeight: FontWeight.bold)),
+                        Text('Casos Confirmados: ${widget.currentlySelectedPin.report['cases'].toString()}', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+                        Text('Casos Fatais: ${widget.currentlySelectedPin.report['deaths'].toString()}', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
                       ],
                     ),
                   ),

@@ -22,6 +22,7 @@ dependencies:
   path_provider: ^1.6.5
   sliding_up_panel: ^1.0.2
   splashscreen: ^1.2.0
+  vibration: ^1.2.4
   webview_flutter: ^0.3.19+9
 
 dev_dependencies:
