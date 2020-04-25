@@ -127,8 +127,10 @@ class _ChartsPageState extends State<ChartsPage> {
         break;
       case 'Estados':
         fileData = fileDataStates;
-        _selectedLabel = states[_selectedRegion.split('-')[1].trim()].name + ' - ' + _selectedRegion.split('-')[1].trim();
-        _selectedRegion = _selectedRegion.split('-')[1].trim();
+        if(_selectedRegion != ''){
+          _selectedLabel = states[_selectedRegion.split('-')[1].trim()].name + ' - ' + _selectedRegion.split('-')[1].trim();
+          _selectedRegion = _selectedRegion.split('-')[1].trim();
+        }
       break;
       case 'Cidades':
         fileData = fileDataCities;
@@ -143,15 +145,6 @@ class _ChartsPageState extends State<ChartsPage> {
     } else{
       index = columnTitles.indexOf("state");
     }
-    
-    setState(() {
-      if((isCity) && _locationsRegions != _locationsCities){
-        _locationsRegions = _locationsCities;
-      }
-      else if((!isCity) && _locationsRegions != _locationsStates){
-        _locationsRegions = _locationsStates;
-      }
-    });
     
     if(_selectedRegion != ''){
       fileData.forEach((strRow){
@@ -270,17 +263,20 @@ class _ChartsPageState extends State<ChartsPage> {
     setState(() {
       _timeSelected = null;
       showBarChart = showBars;
-      lineChartWidget = new charts.TimeSeriesChart(
-        lineChart,
-        animate: false,
-        defaultRenderer: (showBarChart ? new charts.BarRendererConfig<DateTime>() : new charts.LineRendererConfig(includePoints: true, includeLine: true)),
-        selectionModels: [
-          new charts.SelectionModelConfig(
-            type: charts.SelectionModelType.info,
-            changedListener: _onSelectionChanged,
-          )
-        ],
-      );
+      if(_selectedRegion != ''){
+        lineChartWidget = new charts.TimeSeriesChart(
+          lineChart,
+          animate: false,
+          defaultRenderer: (showBarChart ? new charts.BarRendererConfig<DateTime>() : new charts.LineRendererConfig(includePoints: true, includeLine: true)),
+          selectionModels: [
+            new charts.SelectionModelConfig(
+              type: charts.SelectionModelType.info,
+              changedListener: _onSelectionChanged,
+            )
+          ],
+        );
+      }
+      
       chartIndex = chartName;
       showChart = true;
       _loading = false;
@@ -330,9 +326,10 @@ class _ChartsPageState extends State<ChartsPage> {
                               _selectedType = newValue;
                               _selectedRegion = '';
                               _selectedLabel = '';
+                              if(newValue == 'Estados') _locationsRegions = _locationsStates;
+                              else if(newValue == 'Cidades') _locationsRegions = _locationsCities;
                               lineChartWidget = Text('Pesquise uma região para mais detalhes', textAlign: TextAlign.center);
                             });
-                            updateChartInfo();
                           }
                         },
                         items: _locations.map((location) {
@@ -386,33 +383,49 @@ class _ChartsPageState extends State<ChartsPage> {
                       },
                       hideOnError: true,
                       hideSuggestionsOnKeyboardHide: true,
+                      noItemsFoundBuilder: (BuildContext context){
+                        return Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            'Nenhuma localidade encontrada',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                color: Theme.of(context).disabledColor, fontSize: 18.0),
+                          ),
+                        );
+                      },
                   )],
                 ))])
               )),
                 
-              Padding(
-                padding: const EdgeInsets.only(left: 16.0, right: 16.0),
-                child: Row(
-                  mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: 
-                  <Widget>[ 
-                    if(lineTotalCases != null) ChartButtonWidget(chartName: 'Confirmados', chartIndex: this.chartIndex, changeChart: this.changeChart),
-                    if(lineNewCases != null) ChartButtonWidget(chartName: 'Novos Casos', chartIndex: this.chartIndex, changeChart: this.changeChart),
-                  ]),
+              if(_selectedRegion != '') (  
+                Padding(
+                  padding: const EdgeInsets.only(left: 16.0, right: 16.0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.max,
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: 
+                    <Widget>[ 
+                      if(lineTotalCases != null) ChartButtonWidget(chartName: 'Confirmados', chartIndex: this.chartIndex, changeChart: this.changeChart),
+                      if(lineNewCases != null) ChartButtonWidget(chartName: 'Novos Casos', chartIndex: this.chartIndex, changeChart: this.changeChart),
+                    ]),
+                )
               ),
-              Padding(
-                padding: const EdgeInsets.only(left: 16.0, right: 16.0),
-                child: Row(
-                  mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: 
-                  <Widget>[ 
-                    if(lineTotalDeaths != null) ChartButtonWidget(chartName: 'Fatais', chartIndex: this.chartIndex, changeChart: this.changeChart),
-                    if(lineNewDeaths != null) ChartButtonWidget(chartName: 'Novos Óbitos', chartIndex: this.chartIndex, changeChart: this.changeChart),
-                    if(lineFatality != null) ChartButtonWidget(chartName: 'Letalidade', chartIndex: this.chartIndex, changeChart: this.changeChart),
-                  ]),
+              if(_selectedRegion != '') (  
+                Padding(
+                  padding: const EdgeInsets.only(left: 16.0, right: 16.0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.max,
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: 
+                    <Widget>[ 
+                      if(lineTotalDeaths != null) ChartButtonWidget(chartName: 'Fatais', chartIndex: this.chartIndex, changeChart: this.changeChart),
+                      if(lineNewDeaths != null) ChartButtonWidget(chartName: 'Novos Óbitos', chartIndex: this.chartIndex, changeChart: this.changeChart),
+                      if(lineFatality != null) ChartButtonWidget(chartName: 'Letalidade', chartIndex: this.chartIndex, changeChart: this.changeChart),
+                    ]),
+                )
               ),
+
               if(errorMsg != null)
               (AlertDialog(
                 title: Text('Aviso'),
@@ -456,18 +469,21 @@ class _ChartsPageState extends State<ChartsPage> {
                     )
                   ), 
                 )),
-                Center(
-                  child:
-                    Padding(
-                    padding: new EdgeInsets.all(16.0),
-                    child: Text(
-                      _timeSelected != null ? 
-                      _pointSelected + " " + chartIndex + " em " + formatDate(_timeSelected, [dd, '/', mm, '/', yyyy]) :
-                      "Toque nos pontos para + info",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+
+                if(_selectedRegion != '') (
+                  Center(
+                    child:
+                      Padding(
+                      padding: new EdgeInsets.all(16.0),
+                      child: Text(
+                        _timeSelected != null ? 
+                        _pointSelected + " " + chartIndex + " em " + formatDate(_timeSelected, [dd, '/', mm, '/', yyyy]) :
+                        "Toque nos pontos para + info",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
                     ),
-                  ),
+                  )
                 )
             ]),
         ),
@@ -485,10 +501,11 @@ class ChartButtonWidget extends StatelessWidget {
 
   Widget build(BuildContext context) {
     return FlatButton(
+      color: chartName == chartIndex ? Colors.blue : Colors.white,
       shape: RoundedRectangleBorder(
               side: BorderSide(color: Colors.black45),
               borderRadius: BorderRadius.all(Radius.circular(3))),
-      child: Text(chartName, style: TextStyle(color: chartName == chartIndex ? Colors.black : Colors.black12)),
+      child: Text(chartName, style: TextStyle(color: chartName == chartIndex ? Colors.white : Colors.grey)),
       onPressed: () {
         this.changeChart(chartName);
       }
