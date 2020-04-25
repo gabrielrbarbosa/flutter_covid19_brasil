@@ -6,8 +6,8 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:loading_overlay/loading_overlay.dart';
 import 'package:vibration/vibration.dart';
-
 import '../model/line_chart.dart';
+import 'package:covid_19_brasil/states.dart';
 
 class ChartsPage extends StatefulWidget {
   @override
@@ -22,8 +22,8 @@ class _ChartsPageState extends State<ChartsPage> {
   List<TimeSeriesCovidDouble> lineFatality = [];
   List<charts.Series<dynamic, DateTime>> lineChart = [];
 
-  String _selectedType = 'País', _selectedRegion = 'TOTAL', _lastSelectedLocation, _pointSelected, errorMsg;
-  List<String> _locations = ['País', 'Estados', 'Cidades'], _locationsStates = [], _locationsRegions = [], _locationsCities = [], _locationsCitiesLoad = [];
+  String _selectedType = 'Brasil', _selectedRegion = 'TOTAL', _selectedLabel = '', _pointSelected, errorMsg;
+  List<String> _locations = ['Brasil', 'Estados', 'Cidades'], _locationsStates = [], _locationsRegions = [], _locationsCities = [], _locationsCitiesLoad = [];
   List fileDataCities, fileDataStates;
   DateTime _timeSelected;
   var lineChartWidget;
@@ -95,8 +95,11 @@ class _ChartsPageState extends State<ChartsPage> {
 
         if(count > 1){
           var info = strRow.split(",");
-          if(!_locationsStates.contains(info[columnTitles.indexOf("state")]) && info[columnTitles.indexOf("state")] != "TOTAL"){
-            _locationsStates.add(info[columnTitles.indexOf("state")]);
+          if(info[columnTitles.indexOf("state")] != 'TOTAL'){
+            var stateFullName = states[info[columnTitles.indexOf("state")]].name + ' - ' + info[columnTitles.indexOf("state")];
+            if(!_locationsStates.contains(stateFullName)){
+              _locationsStates.add(stateFullName);
+            }
           }
         }
         count++;
@@ -116,97 +119,76 @@ class _ChartsPageState extends State<ChartsPage> {
     List<TimeSeriesCovid> totalCases = [], newCases = [], totalDeaths = [], newDeaths = [];
     List<TimeSeriesCovidDouble> fatality = [];
     List fileData, columnTitles;
+    bool isCity = false;
 
     switch(_selectedType){
-      case 'País':
-        if(fileDataStates.length > 0){
-          fileData = fileDataStates;
-          columnTitles = fileData[0].split(",");
-          index = columnTitles.indexOf("state");
-        }
-        setState(() {
-          if(_locationsRegions != _locationsStates){
-            _locationsRegions = _locationsStates;
-            chartIndex = 'Confirmados';
-          }
-          if(_lastSelectedLocation != _selectedType){
-            _selectedRegion = 'TOTAL';
-            _lastSelectedLocation = _selectedType;
-          }
-        });
-      break;
+      case 'Brasil':
+        fileData = fileDataStates;
+        break;
       case 'Estados':
-        if(fileDataStates.length > 0){
-          fileData = fileDataStates;
-          columnTitles = fileData[0].split(",");
-          index = columnTitles.indexOf("state");
-        }
-        setState(() {
-          if(_locationsRegions != _locationsStates){
-            _locationsRegions = _locationsStates;
-            chartIndex = 'Confirmados';
-          }
-          if(_lastSelectedLocation != _selectedType){
-            _selectedRegion = 'PR';
-            _lastSelectedLocation = _selectedType;
-          }
-        });
+        fileData = fileDataStates;
+        _selectedLabel = states[_selectedRegion.split('-')[1].trim()].name + ' - ' + _selectedRegion.split('-')[1].trim();
+        _selectedRegion = _selectedRegion.split('-')[1].trim();
       break;
       case 'Cidades':
-        if(fileDataStates.length > 0){
-          fileData = fileDataCities;
-          columnTitles = fileData[0].split(",");
-          index = columnTitles.indexOf("city");
-        }
-        setState(() {
-          if(_locationsRegions != _locationsCities){
-            _locationsRegions = _locationsCities;
-            chartIndex = 'Confirmados';
-          }
-          if(_lastSelectedLocation != _selectedType){
-            _selectedRegion = "Londrina/PR";
-            _lastSelectedLocation = _selectedType;
-          }
-        });
+        fileData = fileDataCities;
+        _selectedLabel = _selectedRegion;
+        isCity = true;
       break;
     }
+
+    columnTitles = fileData[0].split(",");
+    if(isCity){
+      index = columnTitles.indexOf("city");
+    } else{
+      index = columnTitles.indexOf("state");
+    }
     
-    fileData.forEach((strRow){
-      if(strRow == ""){
-        return false;
-      }
-
-      var info = strRow.split(",");
-      if(count > 1){
-        if(info[index] == _selectedRegion){
-          double fatalRatio = 0;
-          if(int.parse(info[columnTitles.indexOf('deaths')]) > 0){
-            fatalRatio = (int.parse(info[columnTitles.indexOf('deaths')]) / int.parse(info[columnTitles.indexOf('totalCases')]) * 100);
-            String fatalStr = fatalRatio.toStringAsFixed(2);
-            fatalRatio = double.parse(fatalStr);
-          }
-
-          String date = info[columnTitles.indexOf('date')];
-          if(int.parse(info[columnTitles.indexOf('totalCases')]) > 0) totalCases.add(new TimeSeriesCovid(DateTime.parse(date), int.parse(info[columnTitles.indexOf('totalCases')])));
-          if(int.parse(info[columnTitles.indexOf('newCases')]) > 0) newCases.add(new TimeSeriesCovid(DateTime.parse(date), int.parse(info[columnTitles.indexOf('newCases')])));
-          if(int.parse(info[columnTitles.indexOf('deaths')]) > 0) totalDeaths.add(new TimeSeriesCovid(DateTime.parse(date), int.parse(info[columnTitles.indexOf('deaths')])));
-          if(int.parse(info[columnTitles.indexOf('newDeaths')]) > 0) newDeaths.add(new TimeSeriesCovid(DateTime.parse(date), int.parse(info[columnTitles.indexOf('newDeaths')])));
-          if(int.parse(info[columnTitles.indexOf('deaths')]) > 0) fatality.add(new TimeSeriesCovidDouble(DateTime.parse(date), fatalRatio));
-          return true;
-        }
-      }
-      count++;
-      return false;
-    });
     setState(() {
-      lineTotalCases = totalCases;
-      lineNewCases = newCases;
-      lineTotalDeaths = totalDeaths;
-      lineNewDeaths = newDeaths;
-      lineFatality = fatality;
-      showChart = true;
-      _loading = false;
+      if((isCity) && _locationsRegions != _locationsCities){
+        _locationsRegions = _locationsCities;
+      }
+      else if((!isCity) && _locationsRegions != _locationsStates){
+        _locationsRegions = _locationsStates;
+      }
     });
+    
+    if(_selectedRegion != ''){
+      fileData.forEach((strRow){
+        if(strRow == ""){
+          return false;
+        }
+
+        var info = strRow.split(",");
+        if(count > 1){
+          if(info[index] == _selectedRegion){
+            double fatalRatio = 0;
+            if(int.parse(info[columnTitles.indexOf('deaths')]) > 0){
+              fatalRatio = (int.parse(info[columnTitles.indexOf('deaths')]) / int.parse(info[columnTitles.indexOf('totalCases')]) * 100);
+              String fatalStr = fatalRatio.toStringAsFixed(2);
+              fatalRatio = double.parse(fatalStr);
+            }
+
+            String date = info[columnTitles.indexOf('date')];
+            if(int.parse(info[columnTitles.indexOf('totalCases')]) > 0) totalCases.add(new TimeSeriesCovid(DateTime.parse(date), int.parse(info[columnTitles.indexOf('totalCases')])));
+            if(int.parse(info[columnTitles.indexOf('newCases')]) > 0) newCases.add(new TimeSeriesCovid(DateTime.parse(date), int.parse(info[columnTitles.indexOf('newCases')])));
+            if(int.parse(info[columnTitles.indexOf('deaths')]) > 0) totalDeaths.add(new TimeSeriesCovid(DateTime.parse(date), int.parse(info[columnTitles.indexOf('deaths')])));
+            if(int.parse(info[columnTitles.indexOf('newDeaths')]) > 0) newDeaths.add(new TimeSeriesCovid(DateTime.parse(date), int.parse(info[columnTitles.indexOf('newDeaths')])));
+            if(int.parse(info[columnTitles.indexOf('deaths')]) > 0) fatality.add(new TimeSeriesCovidDouble(DateTime.parse(date), fatalRatio));
+            return true;
+          }
+        }
+        count++;
+        return false;
+      });
+      setState(() {
+        lineTotalCases = totalCases;
+        lineNewCases = newCases;
+        lineTotalDeaths = totalDeaths;
+        lineNewDeaths = newDeaths;
+        lineFatality = fatality;
+      });
+    }
   }
 
   getSuggestions(pattern) async{
@@ -226,7 +208,7 @@ class _ChartsPageState extends State<ChartsPage> {
       time = selectedDatum.first.datum.time;
       selectedDatum.forEach((charts.SeriesDatum datumPair) {
         if(chartIndex == 'Letalidade'){
-          selected = datumPair.datum.ratio.toString() + '% de ';
+          selected = datumPair.datum.ratio.toString() + '% de';
         } else{
           selected = formatted(datumPair.datum.cases.toString());
         }
@@ -288,7 +270,6 @@ class _ChartsPageState extends State<ChartsPage> {
     setState(() {
       _timeSelected = null;
       showBarChart = showBars;
-      chartIndex = chartName;
       lineChartWidget = new charts.TimeSeriesChart(
         lineChart,
         animate: false,
@@ -300,6 +281,9 @@ class _ChartsPageState extends State<ChartsPage> {
           )
         ],
       );
+      chartIndex = chartName;
+      showChart = true;
+      _loading = false;
     });
   }
 
@@ -323,7 +307,7 @@ class _ChartsPageState extends State<ChartsPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(8.0),
                   child: Row(
                     mainAxisSize: MainAxisSize.max,
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -332,11 +316,24 @@ class _ChartsPageState extends State<ChartsPage> {
                       DropdownButton(
                         value: _selectedType,
                         onChanged: (newValue) {
-                          setState(() {
-                            _selectedType = newValue;
-                            _timeSelected = null;
-                          });
-                          updateChartInfo();
+                          if(newValue == 'Brasil' && newValue != _selectedType){
+                            setState(() {
+                              _selectedType = newValue;
+                              _selectedRegion = 'TOTAL';
+                              _selectedLabel = '';
+                            });
+                            updateChartInfo();
+                            changeChart('Confirmados');
+                          } 
+                          else if(newValue != _selectedType){
+                            setState(() {
+                              _selectedType = newValue;
+                              _selectedRegion = '';
+                              _selectedLabel = '';
+                              lineChartWidget = Text('Pesquise uma região para mais detalhes', textAlign: TextAlign.center);
+                            });
+                            updateChartInfo();
+                          }
                         },
                         items: _locations.map((location) {
                           return DropdownMenuItem(
@@ -345,28 +342,10 @@ class _ChartsPageState extends State<ChartsPage> {
                           );
                         }).toList(),
                       ),
-                      if(_selectedType != 'País') 
-                      (DropdownButton(
-                        value: _selectedRegion,
-                        onChanged: (newValue) {
-                          setState(() {
-                            _selectedRegion = newValue;
-                            _timeSelected = null;
-                          });
-                          updateChartInfo();
-                        },
-                        items: _locationsRegions.map((location) {
-                          return DropdownMenuItem(
-                            child: new Text(location),
-                            value: location,
-                          );
-                        }).toList(),
-                      )
-                    )
                   ])
                 ),
                     
-              if(_selectedType != 'País')
+              if(_selectedType != 'Brasil')
               (Padding(
                 padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 16.0),
                 child:
@@ -398,9 +377,12 @@ class _ChartsPageState extends State<ChartsPage> {
                       },
                       onSuggestionSelected: (suggestion) {
                         setState(() {
-                          _selectedRegion = suggestion;
+                          if(suggestion != _selectedRegion){
+                            _selectedRegion = suggestion;
+                          }
                         });
                         updateChartInfo();
+                        changeChart('Confirmados');
                       },
                       hideOnError: true,
                       hideSuggestionsOnKeyboardHide: true,
@@ -453,6 +435,13 @@ class _ChartsPageState extends State<ChartsPage> {
                   ),
                 ],
               )),
+
+              if(_selectedRegion != 'TOTAL') (
+                Padding(
+                  padding: const EdgeInsets.only(top: 12.0),
+                  child: Text(_selectedLabel, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold))
+                )
+              ),
 
               Expanded(
                 child: Padding(

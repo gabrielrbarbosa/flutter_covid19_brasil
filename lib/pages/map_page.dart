@@ -348,8 +348,9 @@ class _MapPageState extends State<MapPage>{
             backdropTapClosesPanel: true,
             backdropEnabled: true,
             header: Container(width: MediaQuery.of(context).size.width,height: 10, padding: new EdgeInsets.all(4.0),child: Align(alignment: Alignment.topCenter, child: Icon(Icons.arrow_upward, size: 18, color: Colors.blue))),
-            minHeight: 90,
-            maxHeight: 540,
+            minHeight: 95,
+            maxHeight: 550,
+            borderRadius: BorderRadius.only(topLeft: Radius.circular(20.0), topRight: Radius.circular(20.0)),
             panel: Center(
               child: Details(report: _globalInfo, reportBR: _countryInfo),
             ),

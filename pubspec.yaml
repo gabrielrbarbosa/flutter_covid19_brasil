@@ -1,7 +1,7 @@
 name: covid_19_brasil
 description: Mapa para análise de casos do Coronavírus no Brasil
 
-version: 1.4.7
+version: 1.5.0
 
 environment:
   sdk: ">=2.3.0 <3.0.0"
@@ -19,7 +19,6 @@ dependencies:
   google_maps_flutter: ^0.5.26
   loading_overlay: ^0.2.1
   package_info: ^0.4.0+16
-  path_provider: ^1.6.5
   sliding_up_panel: ^1.0.2
   splashscreen: ^1.2.0
   vibration: ^1.2.4

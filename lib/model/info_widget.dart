@@ -12,7 +12,7 @@ class Details extends StatelessWidget {
       child: Column(
         children: <Widget>[
           SizedBox(
-            height: 10.0,
+            height: 15.0,
           ),
           Container(
             child: Row(
