@@ -21,15 +21,12 @@ class _MapPageState extends State<MapPage>{
 
   /// Set of displayed markers on the map
   List<Marker> markers = <Marker>[];
-  double _currentZoom = 4;
-  String _mapStyle;
+  double _currentZoom = 4, pinPillPosition = -100, _pinInfoHeight = 65;
   PinInformation currentlySelectedPin = PinInformation(pinPath: 'assets/images/pin-country.png', report: {'cases': 0, 'deaths': 0}, locationName: '', labelColor: Colors.grey);
-  double pinPillPosition = -100;
 
-  /// Map loading flag
   bool _areMarkersLoading = true;
   BitmapDescriptor bitmapIconCity, bitmapIconState, bitmapIconCountry;
-  String errorMsg;
+  String errorMsg, _mapStyle;
 
   Map<String, dynamic> _countryInfo = {'cases': 0, 'active': 0, 'recovered': 0, 'deaths': 0, 'fatality': 0, 'tests': 0,
                                       'casesPerOneMillion' : 0, 'deathsPerOneMillion' : 0, 'testsPerOneMillion' : 0};
@@ -38,6 +35,9 @@ class _MapPageState extends State<MapPage>{
   void initState(){
     super.initState();
     loadPrefs();
+
+    fetchCountry('brazil');
+    fetchGlobal();
   }
 
   void loadPrefs() async{
@@ -65,11 +65,10 @@ class _MapPageState extends State<MapPage>{
   void _onMapCreated(GoogleMapController controller) async {
     _mapController.complete(controller);
     controller.setMapStyle(_mapStyle);
-
-    fetchCountry('brazil');
+    
     fetchCsvFile('https://raw.githubusercontent.com/wcota/covid19br/master/cases-gps.csv', 'cases-gps.csv');
     fetchCsvFile('https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-total.csv', 'cases-brazil-total.csv');
-    fetchGlobal();
+    
     fetchAllStates();
     fetchAllCountries();
   }
@@ -118,7 +117,7 @@ class _MapPageState extends State<MapPage>{
         PinInformation pinInfo = new PinInformation(
           locationName: country['country'].toString(),
           pinPath: "assets/images/pin-country.png",
-          report: {'cases': formatted(country['cases'].toString()), 'deaths': infoDeaths},
+          report: {'cases': formatted(country['cases'].toString()), 'deaths': infoDeaths, 'recovered': formatted(country['recovered'].toString())},
           labelColor: Colors.blue[800]
         );
         markers.add(
@@ -131,6 +130,7 @@ class _MapPageState extends State<MapPage>{
               setState(() {
                 currentlySelectedPin = pinInfo;
                 pinPillPosition = 0;
+                _pinInfoHeight = 80;
               });
             },
           )
@@ -163,7 +163,7 @@ class _MapPageState extends State<MapPage>{
           PinInformation pinInfo = new PinInformation(
             locationName: country['province'].toString(),
             pinPath: "assets/images/pin-state.png",
-            report: {'cases': formatted(country['stats']['confirmed'].toString()), 'deaths': infoDeaths},
+            report: {'cases': formatted(country['stats']['confirmed'].toString()), 'deaths': infoDeaths, 'recovered': formatted(country['stats']['recovered'].toString())},
             labelColor: Colors.green
           );
           markers.add(
@@ -176,6 +176,7 @@ class _MapPageState extends State<MapPage>{
                 setState(() {
                   currentlySelectedPin = pinInfo;
                   pinPillPosition = 0;
+                  _pinInfoHeight = 80;
                 });
               },
             )
@@ -248,6 +249,7 @@ class _MapPageState extends State<MapPage>{
                 setState(() {
                   currentlySelectedPin = pinInfo;
                   pinPillPosition = 0;
+                  _pinInfoHeight = 65;
                 });
               },
             ),
@@ -296,6 +298,7 @@ class _MapPageState extends State<MapPage>{
                 setState(() {
                   currentlySelectedPin = pinInfo;
                   pinPillPosition = 0;
+                  _pinInfoHeight = 65;
                 });
               },
             ),
@@ -340,6 +343,7 @@ class _MapPageState extends State<MapPage>{
           MapPinPillComponent(
             pinPillPosition: pinPillPosition,
             currentlySelectedPin: currentlySelectedPin,
+            height: _pinInfoHeight
           ),
           
           SlidingUpPanel(

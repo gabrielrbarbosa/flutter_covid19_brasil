@@ -11,13 +11,14 @@ class PinInformation {
 
 class MapPinPillComponent extends StatefulWidget {
 
-  double pinPillPosition;
+  double pinPillPosition, height;
   PinInformation currentlySelectedPin;
 
   MapPinPillComponent({
     Key key,
     this.pinPillPosition,
     this.currentlySelectedPin,
+    this.height
   }) : super(key: key);
 
   @override
@@ -38,7 +39,7 @@ class MapPinPillComponentState extends State<MapPinPillComponent> {
           alignment: Alignment.bottomCenter,
           child: Container(
             margin: EdgeInsets.only(left: 20, right: 20, top: 5),
-            height: 65,
+            height: widget.height,
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.all(Radius.circular(50)),
@@ -66,8 +67,9 @@ class MapPinPillComponentState extends State<MapPinPillComponent> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
                         Text(widget.currentlySelectedPin.locationName, style: TextStyle(color: widget.currentlySelectedPin.labelColor, fontSize: 14, fontWeight: FontWeight.bold)),
-                        Text('Casos Confirmados: ${widget.currentlySelectedPin.report['cases'].toString()}', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
-                        Text('Casos Fatais: ${widget.currentlySelectedPin.report['deaths'].toString()}', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+                        if(widget.currentlySelectedPin.report['cases'] != null) Text('Casos Confirmados: ${widget.currentlySelectedPin.report['cases'].toString()}', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+                        if(widget.currentlySelectedPin.report['recovered'] != null) Text('Casos Recuperados: ${widget.currentlySelectedPin.report['recovered'].toString()}', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+                        if(widget.currentlySelectedPin.report['deaths'] != null) Text('Casos Fatais: ${widget.currentlySelectedPin.report['deaths'].toString()}', style: TextStyle(fontSize: 14, color: Colors.grey[600]))
                       ],
                     ),
                   ),
