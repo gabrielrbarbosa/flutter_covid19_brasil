@@ -3,12 +3,12 @@ import 'dart:convert';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:sliding_up_panel/sliding_up_panel.dart';
-import '../states.dart';
-import '../model/info_widget.dart';
+import 'package:covid_19_brasil/states.dart';
+import 'package:covid_19_brasil/model/info_widget.dart';
 import 'package:covid_19_brasil/model/pin_information.dart';
-import 'package:intl/intl.dart';
 import 'package:vibration/vibration.dart';
 
 class MapPage extends StatefulWidget {

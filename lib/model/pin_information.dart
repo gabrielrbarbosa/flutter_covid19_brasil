@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 class PinInformation {
-  String pinPath;
-  Map<dynamic, dynamic> report;
-  String locationName;
+  final String pinPath;
+  final Map<dynamic, dynamic> report;
+  final String locationName;
   Color labelColor;
 
   PinInformation({this.pinPath, this.report, this.locationName, this.labelColor});
@@ -11,14 +11,15 @@ class PinInformation {
 
 class MapPinPillComponent extends StatefulWidget {
 
-  double pinPillPosition, height;
-  PinInformation currentlySelectedPin;
+  double pinPillPosition;
+  final double height;
+  final PinInformation currentlySelectedPin;
 
   MapPinPillComponent({
     Key key,
     this.pinPillPosition,
+    this.height,
     this.currentlySelectedPin,
-    this.height
   }) : super(key: key);
 
   @override

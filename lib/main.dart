@@ -31,20 +31,13 @@ class MainPage extends StatefulWidget {
   }
 }
 
-class AfterSplashScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return new HomePage();
-  }
-}
-
 class _MainPage extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: new SplashScreen(
-        seconds: 2,
-        navigateAfterSeconds: new AfterSplashScreen(),
+        seconds: 1,
+        navigateAfterSeconds: new HomePage(),
         title: new Text('Informações sobre a COVID-19',
         style: new TextStyle(
           fontSize: 20.0
@@ -53,7 +46,7 @@ class _MainPage extends State<MainPage> {
         backgroundColor: Colors.white,
         styleTextUnderTheLoader: new TextStyle(),
         photoSize: 200.0,
-        loaderColor: Colors.blue
+        loaderColor: Colors.white
       ),
     );
   }

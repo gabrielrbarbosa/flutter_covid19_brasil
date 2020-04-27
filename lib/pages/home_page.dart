@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:covid_19_brasil/pages/charts_page.dart';
 import 'package:covid_19_brasil/pages/map_page.dart';
@@ -27,7 +26,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedDrawerIndex = 0;
-  bool _isLoadingPage = true;
   PackageInfo _packageInfo = PackageInfo(
     appName: 'Unknown',
     packageName: 'Unknown',
@@ -82,41 +80,36 @@ class _HomePageState extends State<HomePage> {
   _getDrawerItemWidget(int pos) {
     switch (pos) {
       case 0:
-        return new MapPage();
+        return MapPage();
       case 1:
-        return new ChartsPage();
+        return ChartsPage();
       case 2:
         return Container(
           child: WebView(
-            key: new Key('statesMapIframe'),
+            key: Key('statesMapIframe'),
             initialUrl: Uri.dataFromString('<html><body style="margin: 0; padding: 0;"><iframe style="width:100%;height:100%" src="https://public.tableau.com/views/MKTScoredeisolamentosocial/VisoGeral?:embed=y&:showVizHome=n"></iframe></body></html>', mimeType: 'text/html').toString(),
-            javascriptMode: JavascriptMode.unrestricted,
+            javascriptMode: JavascriptMode.unrestricted
           )
         );
       case 3:
-        return Opacity(opacity: _isLoadingPage ? 0 : 1, child: (Container(
+        return (Container(
           child: WebView(
-            key: new Key('twitterIframe'),
+            key: Key('twitterIframe'),
             initialUrl: Uri.dataFromString('<html><body style="margin: 0; padding: 0;"><a class="twitter-timeline" href="https://twitter.com/minsaude?ref_src=twsrc%5Etfw">Tweets by minsaude</a> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script></body></html>', mimeType: 'text/html').toString(),
-            javascriptMode: JavascriptMode.unrestricted,
-            onPageFinished: (finish) {
-              setState(() {
-                _isLoadingPage = false;
-              });
-            },
+            javascriptMode: JavascriptMode.unrestricted
           )
-        )));
+        ));
       case 4:
         return Container(
           child: WebView(
-            key: new Key('covidGovIframe'),
+            key: Key('covidGovIframe'),
             initialUrl: Uri.dataFromString('<html><body style="margin: 0; padding: 0;"><iframe style="width:100%;height:100%" src="https://covid.saude.gov.br/"></iframe></body></html>', mimeType: 'text/html').toString(),
-            javascriptMode: JavascriptMode.unrestricted,
+            javascriptMode: JavascriptMode.unrestricted
           )
         );      
         break;
       default:
-        return new Text("Error");
+        return Text("Error");
     }
   }
 
@@ -126,7 +119,9 @@ class _HomePageState extends State<HomePage> {
     } else {
       _scaffoldKey.currentState.openEndDrawer();
     }
-    setState(() => _selectedDrawerIndex = index);
+    if(index != _selectedDrawerIndex){
+      setState(() => _selectedDrawerIndex = index );
+    }
   }
 
   @override

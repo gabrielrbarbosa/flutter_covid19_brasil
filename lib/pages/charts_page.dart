@@ -1,14 +1,12 @@
 import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:date_format/date_format.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:loading_overlay/loading_overlay.dart';
-import 'package:vibration/vibration.dart';
-import '../model/line_chart.dart';
+import 'package:covid_19_brasil/model/line_chart.dart';
 import 'package:covid_19_brasil/states.dart';
+import 'package:vibration/vibration.dart';
 
 class ChartsPage extends StatefulWidget {
   @override
@@ -17,7 +15,7 @@ class ChartsPage extends StatefulWidget {
 
 class _ChartsPageState extends State<ChartsPage> {
   String chartIndex = 'Confirmados';
-  bool showChart = false, _loading = true, showBarChart = false;
+  bool showChart = false, showBarChart = false;
 
   List<TimeSeriesCovid> lineTotalCases = [], lineNewCases = [], lineTotalDeaths = [], lineNewDeaths = [];
   List<TimeSeriesCovidDouble> lineFatality = [];
@@ -269,10 +267,8 @@ class _ChartsPageState extends State<ChartsPage> {
           ],
         );
       }
-      
       chartIndex = chartName;
       showChart = true;
-      _loading = false;
     });
   }
 
@@ -285,208 +281,207 @@ class _ChartsPageState extends State<ChartsPage> {
   Widget build(BuildContext context) {
 
     return Scaffold(
-      body: LoadingOverlay(
-        child:
-        SafeArea(
-          child:
-          Container(
-          child: Column(
-              mainAxisSize: MainAxisSize.max,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.max,
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: 
-                    <Widget>[ 
-                      DropdownButton(
-                        value: _selectedType,
-                        onChanged: (newValue) {
-                          if(newValue == 'Brasil' && newValue != _selectedType){
-                            setState(() {
-                              _selectedType = newValue;
-                              _selectedRegion = 'TOTAL';
-                              _selectedLabel = '';
-                            });
-                            updateChartInfo();
-                            changeChart('Confirmados');
-                          } 
-                          else if(newValue != _selectedType){
-                            setState(() {
-                              _selectedType = newValue;
-                              _selectedRegion = '';
-                              _selectedLabel = '';
-                              if(newValue == 'Estados') _locationsRegions = _locationsStates;
-                              else if(newValue == 'Cidades') _locationsRegions = _locationsCities;
-                              lineChartWidget = Text('Pesquise uma região para mais detalhes', textAlign: TextAlign.center);
-                            });
-                          }
-                        },
-                        items: _locations.map((location) {
-                          return DropdownMenuItem(
-                            child: new Text(location),
-                            value: location,
-                          );
-                        }).toList(),
-                      ),
-                  ])
-                ),
-                    
-              if(_selectedType != 'Brasil')
-              (Padding(
-                padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 16.0),
-                child:
-                Row(
+      body: SafeArea(
+      child:
+      Container(
+      child: Column(
+          mainAxisSize: MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
                 mainAxisSize: MainAxisSize.max,
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: <Widget>[ 
-                  Expanded( // wrap your Column in Expanded
-                    child: Column(
-                    children: <Widget>[
-                      TypeAheadFormField(
-                      textFieldConfiguration: TextFieldConfiguration(
-                        autofocus: false,
-                        style: DefaultTextStyle.of(context).style.copyWith(
-                          fontStyle: FontStyle.normal
-                        ),
-                        decoration: InputDecoration(
-                          labelText: 'Pesquisar:'
-                        )
-                      ),
-                      suggestionsCallback: (pattern) async {
-                        return await getSuggestions(pattern);
-                      },
-                      itemBuilder: (context, suggestion) {
-                        return ListTile(
-                          leading: Icon(Icons.location_on),
-                          title: Text(suggestion)
-                        );
-                      },
-                      onSuggestionSelected: (suggestion) {
+                children: 
+                <Widget>[ 
+                  DropdownButton(
+                    value: _selectedType,
+                    onChanged: (newValue) {
+                      if(newValue == 'Brasil' && newValue != _selectedType){
                         setState(() {
-                          if(suggestion != _selectedRegion){
-                            _selectedRegion = suggestion;
-                          }
+                          _selectedType = newValue;
+                          _selectedRegion = 'TOTAL';
+                          _selectedLabel = '';
                         });
                         updateChartInfo();
                         changeChart('Confirmados');
-                      },
-                      hideOnError: true,
-                      hideSuggestionsOnKeyboardHide: true,
-                      noItemsFoundBuilder: (BuildContext context){
-                        return Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            'Nenhuma localidade encontrada',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                                color: Theme.of(context).disabledColor, fontSize: 18.0),
-                          ),
-                        );
-                      },
-                  )],
-                ))])
-              )),
+                      } 
+                      else if(newValue != _selectedType){
+                        setState(() {
+                          _selectedType = newValue;
+                          _selectedRegion = '';
+                          _selectedLabel = '';
+                          if(newValue == 'Estados') _locationsRegions = _locationsStates;
+                          else if(newValue == 'Cidades') _locationsRegions = _locationsCities;
+                          lineChartWidget = Text('Pesquise uma região para mais detalhes', textAlign: TextAlign.center);
+                        });
+                      }
+                    },
+                    items: _locations.map((location) {
+                      return DropdownMenuItem(
+                        child: new Text(location),
+                        value: location,
+                      );
+                    }).toList(),
+                  ),
+              ])
+            ),
                 
-              if(_selectedRegion != '') (  
-                Padding(
-                  padding: const EdgeInsets.only(left: 16.0, right: 16.0),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.max,
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: 
-                    <Widget>[ 
-                      if(lineTotalCases != null) ChartButtonWidget(chartName: 'Confirmados', chartIndex: this.chartIndex, changeChart: this.changeChart),
-                      if(lineNewCases != null) ChartButtonWidget(chartName: 'Novos Casos', chartIndex: this.chartIndex, changeChart: this.changeChart),
-                    ]),
-                )
-              ),
-              if(_selectedRegion != '') (  
-                Padding(
-                  padding: const EdgeInsets.only(left: 16.0, right: 16.0),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.max,
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: 
-                    <Widget>[ 
-                      if(lineTotalDeaths != null) ChartButtonWidget(chartName: 'Fatais', chartIndex: this.chartIndex, changeChart: this.changeChart),
-                      if(lineNewDeaths != null) ChartButtonWidget(chartName: 'Novos Óbitos', chartIndex: this.chartIndex, changeChart: this.changeChart),
-                      if(lineFatality != null) ChartButtonWidget(chartName: 'Letalidade', chartIndex: this.chartIndex, changeChart: this.changeChart),
-                    ]),
-                )
-              ),
+          if(_selectedType != 'Brasil')
+          (Padding(
+            padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 16.0),
+            child:
+              Row(
+              mainAxisSize: MainAxisSize.max,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: <Widget>[ 
+                Expanded( // wrap your Column in Expanded
+                  child: Column(
+                  children: <Widget>[
+                    TypeAheadFormField(
+                    textFieldConfiguration: TextFieldConfiguration(
+                      autofocus: false,
+                      style: DefaultTextStyle.of(context).style.copyWith(
+                        fontStyle: FontStyle.normal
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Pesquisar:'
+                      )
+                    ),
+                    suggestionsCallback: (pattern) async {
+                      return await getSuggestions(pattern);
+                    },
+                    itemBuilder: (context, suggestion) {
+                      return ListTile(
+                        leading: Icon(Icons.location_on),
+                        title: Text(suggestion)
+                      );
+                    },
+                    onSuggestionSelected: (suggestion) {
+                      setState(() {
+                        if(suggestion != _selectedRegion){
+                          _selectedRegion = suggestion;
+                        }
+                      });
+                      updateChartInfo();
+                      changeChart('Confirmados');
+                    },
+                    hideOnError: true,
+                    hideSuggestionsOnKeyboardHide: true,
+                    noItemsFoundBuilder: (BuildContext context){
+                      return Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          'Nenhuma localidade encontrada',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              color: Theme.of(context).disabledColor, fontSize: 18.0),
+                        ),
+                      );
+                    },
+                )],
+              ))])
+            )
+          ),
+            
+          if(_selectedRegion != '') (  
+            Padding(
+              padding: const EdgeInsets.only(left: 16.0, right: 16.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.max,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: 
+                <Widget>[ 
+                  if(lineTotalCases != null) ChartButtonWidget(chartName: 'Confirmados', chartIndex: this.chartIndex, changeChart: this.changeChart),
+                  if(lineNewCases != null) ChartButtonWidget(chartName: 'Novos Casos', chartIndex: this.chartIndex, changeChart: this.changeChart),
+                ]),
+            )
+          ),
+          if(_selectedRegion != '') (  
+            Padding(
+              padding: const EdgeInsets.only(left: 16.0, right: 16.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.max,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: 
+                <Widget>[ 
+                  if(lineTotalDeaths != null) ChartButtonWidget(chartName: 'Fatais', chartIndex: this.chartIndex, changeChart: this.changeChart),
+                  if(lineNewDeaths != null) ChartButtonWidget(chartName: 'Novos Óbitos', chartIndex: this.chartIndex, changeChart: this.changeChart),
+                  if(lineFatality != null) ChartButtonWidget(chartName: 'Letalidade', chartIndex: this.chartIndex, changeChart: this.changeChart),
+                ]),
+            )
+          ),
 
-              if(errorMsg != null)
-              (AlertDialog(
-                title: Text('Aviso'),
-                content: SingleChildScrollView(
-                  child: ListBody(
-                    children: <Widget>[
-                      Text(errorMsg),
-                      Text('Verifique sua conexão com a Internet ou tente novamente mais tarde.'),
-                    ],
+          if(errorMsg != null)
+          (AlertDialog(
+            title: Text('Aviso'),
+            content: SingleChildScrollView(
+              child: ListBody(
+                children: <Widget>[
+                  Text(errorMsg),
+                  Text('Verifique sua conexão com a Internet ou tente novamente mais tarde.'),
+                ],
+              ),
+            ),
+            actions: <Widget>[
+              FlatButton(
+                child: Text('OK'),
+                onPressed: () {
+                  setState(() {
+                    errorMsg = null;
+                  });
+                },
+              ),
+            ],
+          )),
+
+          if(_selectedRegion != 'TOTAL') (
+            Padding(
+              padding: const EdgeInsets.only(top: 12.0),
+              child: Text(_selectedLabel, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold))
+            )
+          ),
+
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: showChart ? 
+              (lineChartWidget) :
+              (Center(
+                  child: Text(
+                    "Carregando os dados...",
+                    textAlign: TextAlign.center,
+                  ),
+                )
+              ), 
+            )),
+
+            if(_selectedRegion != '') (
+              Center(
+                child:
+                  Padding(
+                  padding: new EdgeInsets.all(16.0),
+                  child: Text(
+                    _timeSelected != null ? 
+                    _pointSelected + " " + chartIndex + " em " + formatDate(_timeSelected, [dd, '/', mm, '/', yyyy]) :
+                    "Toque nos pontos para + info",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                 ),
-                actions: <Widget>[
-                  FlatButton(
-                    child: Text('OK'),
-                    onPressed: () {
-                      setState(() {
-                        errorMsg = null;
-                      });
-                    },
-                  ),
-                ],
-              )),
-
-              if(_selectedRegion != 'TOTAL') (
-                Padding(
-                  padding: const EdgeInsets.only(top: 12.0),
-                  child: Text(_selectedLabel, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold))
-                )
-              ),
-
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: showChart ? 
-                  (lineChartWidget) :
-                  (Center(
-                      child: Text(
-                        "Carregando os dados...",
-                        textAlign: TextAlign.center,
-                      ),
-                    )
-                  ), 
-                )),
-
-                if(_selectedRegion != '') (
-                  Center(
-                    child:
-                      Padding(
-                      padding: new EdgeInsets.all(16.0),
-                      child: Text(
-                        _timeSelected != null ? 
-                        _pointSelected + " " + chartIndex + " em " + formatDate(_timeSelected, [dd, '/', mm, '/', yyyy]) :
-                        "Toque nos pontos para + info",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                      ),
-                    ),
-                  )
-                )
-            ]),
+              )
+            )
+          ]),
         ),
-      ), isLoading: _loading, opacity: 0, color: Colors.white,)
+      ),
     );
   }
 }
 
 class ChartButtonWidget extends StatelessWidget {
-  Function changeChart;
+  final Function changeChart;
   final String chartIndex;
   final String chartName;
   
