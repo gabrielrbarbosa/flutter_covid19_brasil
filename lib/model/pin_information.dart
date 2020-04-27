@@ -34,7 +34,8 @@ class MapPinPillComponentState extends State<MapPinPillComponent> {
       top: widget.pinPillPosition,
       right: 0,
       left: 0,
-      duration: Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      duration: Duration(milliseconds: 200),
         child: Align(
           alignment: Alignment.bottomCenter,
           child: Container(

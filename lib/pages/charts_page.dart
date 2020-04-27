@@ -1,5 +1,6 @@
 import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:date_format/date_format.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:http/http.dart' as http;
@@ -52,66 +53,58 @@ class _ChartsPageState extends State<ChartsPage> {
     }
   }
 
-  void _createChart(txt, filename){
-    
-    if(filename == "cases-brazil-cities-time.csv"){
-      fileDataCities = txt.split("\n");
-      List columnTitles = fileDataCities[0].split(",");
-      int count = 1;
+  List initCities(txt){
+    fileDataCities = txt;
+    List columnTitles = fileDataCities[0].split(",");
+    int count = 1;
 
-      fileDataCities.forEach((strRow){
-        if(strRow == "") return false;
+    fileDataCities.forEach((strRow){
+      if(strRow == "") return false;
 
-        // Get all locations and store in dropdown list
-        if(count > 1){
-          var info = strRow.split(",");
+      // Get all locations and store in dropdown list
+      if(count > 1){
+        var info = strRow.split(",");
 
-          if(!info[columnTitles.indexOf("city")].contains("SEM LOCALIZAÇÃO DEFINIDA")){
-            if(!_locationsCitiesLoad.contains(info[columnTitles.indexOf("city")])){
-              _locationsCitiesLoad.add(info[columnTitles.indexOf("city")]);
-            } else if(_locationsCitiesLoad.contains(info[columnTitles.indexOf("city")]) && !_locationsCities.contains(info[columnTitles.indexOf("city")])){
-              _locationsCities.add(info[columnTitles.indexOf("city")]);
-            }
+        if(!info[columnTitles.indexOf("city")].contains("SEM LOCALIZAÇÃO DEFINIDA")){
+          if(!_locationsCitiesLoad.contains(info[columnTitles.indexOf("city")])){
+            _locationsCitiesLoad.add(info[columnTitles.indexOf("city")]);
+          } else if(_locationsCitiesLoad.contains(info[columnTitles.indexOf("city")]) && !_locationsCities.contains(info[columnTitles.indexOf("city")])){
+            _locationsCities.add(info[columnTitles.indexOf("city")]);
           }
         }
-        count++;
-        _locationsCities.sort((a, b) => a.toString().compareTo(b.toString()));
-        return true;
-      });
+      }
+      count++;
+      return true;
+    });
 
+    _locationsCities.sort((a, b) => a.toString().compareTo(b.toString()));
+    return _locationsCities;
+  }
+
+  List initStates(txt){
+    fileDataStates = txt;
+    states.forEach((uf, state){
+      _locationsStates.add(state.name + ' - ' + uf);
+      return true;
+    });
+    return _locationsStates;
+  }
+
+  void _createChart(txt, filename) async{ 
+    if(filename == "cases-brazil-cities-time.csv"){
+      List cities = initCities(txt.split('\n'));
       setState(() {
-        _locationsCities = _locationsCities;
+        _locationsCities = cities;
       });
-      changeChart(chartIndex);
-      updateChartInfo();
     } 
     else if(filename == "cases-brazil-states.csv"){
-      fileDataStates = txt.split("\n");
-      List columnTitles = fileDataStates[0].split(",");
-      int count = 1;
-
-      fileDataStates.forEach((strRow){
-        if(strRow == "") return false;
-
-        if(count > 1){
-          var info = strRow.split(",");
-          if(info[columnTitles.indexOf("state")] != 'TOTAL'){
-            var stateFullName = states[info[columnTitles.indexOf("state")]].name + ' - ' + info[columnTitles.indexOf("state")];
-            if(!_locationsStates.contains(stateFullName)){
-              _locationsStates.add(stateFullName);
-            }
-          }
-        }
-        count++;
-        _locationsStates.sort((a, b) => a.toString().compareTo(b.toString()));
-        return true;
-      });
-
+      List states = initStates(txt.split('\n'));
       setState(() {
-        _locationsStates = _locationsStates;
+        _locationsStates = states;
       });
       updateChartInfo();
     }
+    changeChart(chartIndex);
   }
 
   void updateChartInfo(){

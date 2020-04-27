@@ -254,11 +254,6 @@ class _MapPageState extends State<MapPage>{
               },
             ),
           );
-          
-          setState(() {
-            markers =  markers;
-            _areMarkersLoading = false;
-          });
         }
         count++;
         return true;
@@ -303,16 +298,15 @@ class _MapPageState extends State<MapPage>{
               },
             ),
           );
-          
-          setState(() {
-            markers =  markers;
-            _areMarkersLoading = false;
-          });
         }
         count++;
         return true;
       });
     }
+    setState(() {
+      markers =  markers;
+      _areMarkersLoading = false;
+    });
   }
 
   String formatted(String str){
@@ -391,7 +385,7 @@ class _MapPageState extends State<MapPage>{
                 alignment: Alignment.topCenter,
                 child: Card(
                   elevation: 2,
-                  color: Colors.grey.withOpacity(0.9),
+                  color: Colors.grey,
                   child: Padding(
                     padding: const EdgeInsets.all(4),
                     child: Text(
