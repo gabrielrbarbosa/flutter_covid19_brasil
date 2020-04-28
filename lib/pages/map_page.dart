@@ -77,9 +77,9 @@ class _MapPageState extends State<MapPage>{
     fetchAllCountries();
 
     
-    if(_db.getString('city_name') != ''){
+    if(_db.getString('favorite_name') != ''){
       controller.moveCamera(CameraUpdate.newCameraPosition(CameraPosition(
-        target: LatLng(_db.getDouble('city_latitude'), _db.getDouble('city_longitude')), zoom: 7))
+        target: LatLng(_db.getDouble('favorite_latitude'), _db.getDouble('favorite_longitude')), zoom: 9))
       );
     }
   }
@@ -134,7 +134,7 @@ class _MapPageState extends State<MapPage>{
           labelColor: Colors.blue[800]
         );
 
-        if(_db.getString('city_name') == country['country'].toString()){
+        if(_db.getString('favorite_name') == country['country'].toString()){
           setState(() {
             currentlySelectedPin = pinInfo;
             pinPillPosition = 0;
@@ -154,7 +154,7 @@ class _MapPageState extends State<MapPage>{
                 currentlySelectedPin = pinInfo;
                 pinPillPosition = 0;
                 pinInfoHeight = 80;
-                isFavorite = _db.getString('city_name') == country['country'].toString();
+                isFavorite = _db.getString('favorite_name') == country['country'].toString();
               });
             },
           )
@@ -193,7 +193,7 @@ class _MapPageState extends State<MapPage>{
             labelColor: Colors.green
           );
 
-          if(_db.getString('city_name') == country['province'].toString()){
+          if(_db.getString('favorite_name') == country['province'].toString()){
             setState(() {
               currentlySelectedPin = pinInfo;
               pinPillPosition = 0;
@@ -212,7 +212,7 @@ class _MapPageState extends State<MapPage>{
                   currentlySelectedPin = pinInfo;
                   pinPillPosition = 0;
                   pinInfoHeight = 80;
-                  isFavorite = _db.getString('city_name') == country['province'].toString();
+                  isFavorite = _db.getString('favorite_name') == country['province'].toString();
                 });
               },
             )
@@ -280,7 +280,7 @@ class _MapPageState extends State<MapPage>{
             labelColor: Colors.red
           );
 
-          if(_db.getString('city_name') == city[columnTitles.indexOf("name")]){
+          if(_db.getString('favorite_name') == city[columnTitles.indexOf("name")]){
             setState(() {
               currentlySelectedPin = pinInfo;
               pinPillPosition = 0;
@@ -300,7 +300,7 @@ class _MapPageState extends State<MapPage>{
                   currentlySelectedPin = pinInfo;
                   pinPillPosition = 0;
                   pinInfoHeight = 80;
-                  isFavorite = _db.getString('city_name') == city[columnTitles.indexOf("name")];
+                  isFavorite = _db.getString('favorite_name') == city[columnTitles.indexOf("name")];
                 });
               },
             ),
@@ -340,7 +340,7 @@ class _MapPageState extends State<MapPage>{
             labelColor: Colors.green
           );
 
-          if(_db.getString('city_name') == states[st[columnTitles.indexOf("state")]].name){
+          if(_db.getString('favorite_name') == states[st[columnTitles.indexOf("state")]].name){
             setState(() {
               currentlySelectedPin = pinInfo;
               pinPillPosition = 0;
@@ -360,7 +360,7 @@ class _MapPageState extends State<MapPage>{
                   currentlySelectedPin = pinInfo;
                   pinPillPosition = 0;
                   pinInfoHeight = 110;
-                  isFavorite = _db.getString('city_name') == states[st[columnTitles.indexOf("state")]].name;
+                  isFavorite = _db.getString('favorite_name') == states[st[columnTitles.indexOf("state")]].name;
                 });
               },
             ),

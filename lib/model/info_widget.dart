@@ -125,7 +125,7 @@ Widget createDetailItem({BuildContext context, String value, Color color, String
                 '$value',
                 style: Theme.of(context)
                     .textTheme
-                    .headline,
+                    .headline5,
               ),
             ],
           )

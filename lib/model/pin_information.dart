@@ -32,7 +32,7 @@ class MapPinPillComponent extends StatefulWidget {
 
 class MapPinPillComponentState extends State<MapPinPillComponent> {
   SharedPreferences db;
-  String _city = '';
+  String _favoriteLocation = '';
 
   void initState(){
     super.initState();
@@ -41,36 +41,26 @@ class MapPinPillComponentState extends State<MapPinPillComponent> {
   
   void initPrefs() async{
     db = await SharedPreferences.getInstance();
-    _city = (db.getString('city_name') ?? '');
-    if(_city != '' && _city == widget.currentlySelectedPin.locationName){
-      setState(() {
-        widget.isFavorite = true;
-      });
-    }
+    _favoriteLocation = (db.getString('favorite_name') ?? '');
   }
 
   void changeFavoriteCity(isLiked) async{
-    _city = (db.getString('city_name') ?? '');
-    if(_city != widget.currentlySelectedPin.locationName && !isLiked){
-      db.setString('city_name', widget.currentlySelectedPin.locationName);
-      db.setDouble('city_latitude', widget.currentlySelectedPin.lat);
-      db.setDouble('city_longitude', widget.currentlySelectedPin.long);
-      setState(() {
-        widget.isFavorite = true;
-      });
+    _favoriteLocation = (db.getString('favorite_name') ?? '');
+    if(_favoriteLocation != widget.currentlySelectedPin.locationName && !isLiked){
+      db.setString('favorite_name', widget.currentlySelectedPin.locationName);
+      db.setDouble('favorite_latitude', widget.currentlySelectedPin.lat);
+      db.setDouble('favorite_longitude', widget.currentlySelectedPin.long);
     } else if(isLiked){
-      db.setString('city_name', '');
-      db.setDouble('city_latitude', 0);
-      db.setDouble('city_longitude', 0);
-      setState(() {
-        widget.isFavorite = false;
-      });
+      db.setString('favorite_name', '');
+      db.setDouble('favorite_latitude', 0);
+      db.setDouble('favorite_longitude', 0);
     }
   }
 
   Future<bool> onLikeButtonTapped(bool isLiked) async{
     Vibration.vibrate(duration: 10, amplitude: 255);
     changeFavoriteCity(isLiked);
+    
     return !isLiked;
   }
 
