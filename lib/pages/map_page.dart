@@ -22,7 +22,7 @@ class _MapPageState extends State<MapPage>{
 
   /// Set of displayed markers on the map
   List<Marker> markers = <Marker>[];
-  double _currentZoom = 4, pinPillPosition = -100, pinInfoHeight = 80;
+  double _currentZoom = 4, pinPillPosition = -100;
   bool isFavorite = false;
   PinInformation currentlySelectedPin = PinInformation(pinPath: 'assets/images/pin-country.png', report: {'cases': 0, 'deaths': 0}, locationName: '', labelColor: Colors.grey);
 
@@ -138,7 +138,6 @@ class _MapPageState extends State<MapPage>{
           setState(() {
             currentlySelectedPin = pinInfo;
             pinPillPosition = 0;
-            pinInfoHeight = 80;
             isFavorite = true;
           });
         }
@@ -153,7 +152,6 @@ class _MapPageState extends State<MapPage>{
               setState(() {
                 currentlySelectedPin = pinInfo;
                 pinPillPosition = 0;
-                pinInfoHeight = 80;
                 isFavorite = _db.getString('favorite_name') == country['country'].toString();
               });
             },
@@ -197,7 +195,6 @@ class _MapPageState extends State<MapPage>{
             setState(() {
               currentlySelectedPin = pinInfo;
               pinPillPosition = 0;
-              pinInfoHeight = 80;
               isFavorite = true;
             });
           }
@@ -211,7 +208,6 @@ class _MapPageState extends State<MapPage>{
                 setState(() {
                   currentlySelectedPin = pinInfo;
                   pinPillPosition = 0;
-                  pinInfoHeight = 80;
                   isFavorite = _db.getString('favorite_name') == country['province'].toString();
                 });
               },
@@ -284,7 +280,6 @@ class _MapPageState extends State<MapPage>{
             setState(() {
               currentlySelectedPin = pinInfo;
               pinPillPosition = 0;
-              pinInfoHeight = 80;
               isFavorite = true;
             });
           }
@@ -299,7 +294,6 @@ class _MapPageState extends State<MapPage>{
                 setState(() {
                   currentlySelectedPin = pinInfo;
                   pinPillPosition = 0;
-                  pinInfoHeight = 80;
                   isFavorite = _db.getString('favorite_name') == city[columnTitles.indexOf("name")];
                 });
               },
@@ -344,7 +338,6 @@ class _MapPageState extends State<MapPage>{
             setState(() {
               currentlySelectedPin = pinInfo;
               pinPillPosition = 0;
-              pinInfoHeight = 110;
               isFavorite = true;
             });
           }
@@ -359,7 +352,6 @@ class _MapPageState extends State<MapPage>{
                 setState(() {
                   currentlySelectedPin = pinInfo;
                   pinPillPosition = 0;
-                  pinInfoHeight = 110;
                   isFavorite = _db.getString('favorite_name') == states[st[columnTitles.indexOf("state")]].name;
                 });
               },
@@ -405,7 +397,6 @@ class _MapPageState extends State<MapPage>{
           MapPinPillComponent(
             pinPillPosition: pinPillPosition,
             currentlySelectedPin: currentlySelectedPin,
-            height: pinInfoHeight,
             isFavorite: isFavorite,
           ),
           

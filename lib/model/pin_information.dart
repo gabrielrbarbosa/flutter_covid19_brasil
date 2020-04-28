@@ -15,16 +15,9 @@ class PinInformation {
 class MapPinPillComponent extends StatefulWidget {
   double pinPillPosition;
   bool isFavorite;
-  final double height;
   final PinInformation currentlySelectedPin;
 
-  MapPinPillComponent({
-    Key key,
-    this.pinPillPosition,
-    this.height,
-    this.currentlySelectedPin,
-    this.isFavorite
-  }) : super(key: key);
+  MapPinPillComponent({ Key key, this.pinPillPosition, this.currentlySelectedPin, this.isFavorite }) : super(key: key);
 
   @override
   State<StatefulWidget> createState() => MapPinPillComponentState();
@@ -77,7 +70,7 @@ class MapPinPillComponentState extends State<MapPinPillComponent> {
           alignment: Alignment.bottomCenter,
           child: Container(
             margin: EdgeInsets.only(left: 20, right: 20, top: 5),
-            height: widget.height,
+            padding: EdgeInsets.symmetric(vertical: 10),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.all(Radius.circular(20)),

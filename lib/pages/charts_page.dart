@@ -14,10 +14,10 @@ class ChartsPage extends StatefulWidget {
 }
 
 class _ChartsPageState extends State<ChartsPage> {
-  String chartIndex = 'Confirmados';
+  String chartIndex = 'Total';
   bool showChart = false, showBarChart = false;
 
-  List<TimeSeriesCovid> lineTotalCases = [], lineNewCases = [], lineTotalDeaths = [], lineNewDeaths = [];
+  List<TimeSeriesCovid> lineTotalCases = [], lineNewCases = [], lineTotalDeaths = [], lineNewDeaths = [], lineRecovered = [];
   List<TimeSeriesCovidDouble> lineFatality = [];
   List<charts.Series<dynamic, DateTime>> lineChart = [];
 
@@ -107,7 +107,7 @@ class _ChartsPageState extends State<ChartsPage> {
 
   void updateChartInfo(){
     int count = 1, index;
-    List<TimeSeriesCovid> totalCases = [], newCases = [], totalDeaths = [], newDeaths = [];
+    List<TimeSeriesCovid> totalCases = [], newCases = [], totalDeaths = [], newDeaths = [], recoveredCases = [];
     List<TimeSeriesCovidDouble> fatality = [];
     List fileData, columnTitles;
     bool isCity = false;
@@ -156,6 +156,9 @@ class _ChartsPageState extends State<ChartsPage> {
             String date = info[columnTitles.indexOf('date')];
             if(int.parse(info[columnTitles.indexOf('totalCases')]) > 0) totalCases.add(new TimeSeriesCovid(DateTime.parse(date), int.parse(info[columnTitles.indexOf('totalCases')])));
             if(int.parse(info[columnTitles.indexOf('newCases')]) > 0) newCases.add(new TimeSeriesCovid(DateTime.parse(date), int.parse(info[columnTitles.indexOf('newCases')])));
+            if(columnTitles.indexOf('recovered') != -1){
+              if(info[columnTitles.indexOf('recovered')] != '' && info[columnTitles.indexOf('recovered')] != '0') recoveredCases.add(new TimeSeriesCovid(DateTime.parse(date), int.parse(info[columnTitles.indexOf('recovered')])));
+            }
             if(int.parse(info[columnTitles.indexOf('deaths')]) > 0) totalDeaths.add(new TimeSeriesCovid(DateTime.parse(date), int.parse(info[columnTitles.indexOf('deaths')])));
             if(int.parse(info[columnTitles.indexOf('newDeaths')]) > 0) newDeaths.add(new TimeSeriesCovid(DateTime.parse(date), int.parse(info[columnTitles.indexOf('newDeaths')])));
             if(int.parse(info[columnTitles.indexOf('deaths')]) > 0) fatality.add(new TimeSeriesCovidDouble(DateTime.parse(date), fatalRatio));
@@ -168,6 +171,7 @@ class _ChartsPageState extends State<ChartsPage> {
       setState(() {
         lineTotalCases = totalCases;
         lineNewCases = newCases;
+        lineRecovered = recoveredCases;
         lineTotalDeaths = totalDeaths;
         lineNewDeaths = newDeaths;
         lineFatality = fatality;
@@ -216,6 +220,10 @@ class _ChartsPageState extends State<ChartsPage> {
         chartData = lineNewCases;
         chartColor = charts.MaterialPalette.blue.shadeDefault;
         showBars = true;
+      break;
+      case 'Recuperados':
+        chartData = lineRecovered;
+        chartColor = charts.MaterialPalette.green.shadeDefault;
       break;
       case 'Fatais':
         chartData = lineTotalDeaths;
@@ -306,7 +314,7 @@ class _ChartsPageState extends State<ChartsPage> {
                           _selectedLabel = '';
                         });
                         updateChartInfo();
-                        changeChart('Confirmados');
+                        changeChart('Total');
                       } 
                       else if(newValue != _selectedType){
                         setState(() {
@@ -366,7 +374,7 @@ class _ChartsPageState extends State<ChartsPage> {
                         }
                       });
                       updateChartInfo();
-                      changeChart('Confirmados');
+                      changeChart('Total');
                     },
                     hideOnError: true,
                     hideSuggestionsOnKeyboardHide: true,
@@ -388,28 +396,29 @@ class _ChartsPageState extends State<ChartsPage> {
             
           if(_selectedRegion != '') (  
             Padding(
-              padding: const EdgeInsets.only(left: 16.0, right: 16.0),
+              padding: const EdgeInsets.only(left: 8.0, right: 8.0),
               child: Row(
                 mainAxisSize: MainAxisSize.max,
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: 
                 <Widget>[ 
-                  if(lineTotalCases != null) ChartButtonWidget(chartName: 'Confirmados', chartIndex: this.chartIndex, changeChart: this.changeChart),
-                  if(lineNewCases != null) ChartButtonWidget(chartName: 'Novos Casos', chartIndex: this.chartIndex, changeChart: this.changeChart),
+                  if(lineTotalCases.length > 0) ChartButtonWidget(chartName: 'Total', chartIndex: this.chartIndex, changeChart: this.changeChart, btnSize: 80),
+                  if(lineNewCases.length > 0) ChartButtonWidget(chartName: 'Novos Casos', chartIndex: this.chartIndex, changeChart: this.changeChart, btnSize: 120),
+                  if(lineRecovered.length > 0) ChartButtonWidget(chartName: 'Recuperados', chartIndex: this.chartIndex, changeChart: this.changeChart, btnSize: 120),
                 ]),
             )
           ),
           if(_selectedRegion != '') (  
             Padding(
-              padding: const EdgeInsets.only(left: 16.0, right: 16.0),
+              padding: const EdgeInsets.only(left: 8.0, right: 8.0),
               child: Row(
                 mainAxisSize: MainAxisSize.max,
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: 
                 <Widget>[ 
-                  if(lineTotalDeaths != null) ChartButtonWidget(chartName: 'Fatais', chartIndex: this.chartIndex, changeChart: this.changeChart),
-                  if(lineNewDeaths != null) ChartButtonWidget(chartName: 'Novos Óbitos', chartIndex: this.chartIndex, changeChart: this.changeChart),
-                  if(lineFatality != null) ChartButtonWidget(chartName: 'Letalidade', chartIndex: this.chartIndex, changeChart: this.changeChart),
+                  if(lineTotalDeaths.length > 0) ChartButtonWidget(chartName: 'Fatais', chartIndex: this.chartIndex, changeChart: this.changeChart, btnSize: 80),
+                  if(lineNewDeaths.length > 0) ChartButtonWidget(chartName: 'Novos Óbitos', chartIndex: this.chartIndex, changeChart: this.changeChart, btnSize: 120),
+                  if(lineFatality.length > 0) ChartButtonWidget(chartName: 'Letalidade', chartIndex: this.chartIndex, changeChart: this.changeChart, btnSize: 120),
                 ]),
             )
           ),
@@ -484,19 +493,23 @@ class ChartButtonWidget extends StatelessWidget {
   final Function changeChart;
   final String chartIndex;
   final String chartName;
+  final double btnSize;
   
-  ChartButtonWidget({ this.changeChart, this.chartIndex, this.chartName });
+  ChartButtonWidget({ this.changeChart, this.chartIndex, this.chartName, this.btnSize });
 
   Widget build(BuildContext context) {
-    return FlatButton(
-      color: chartName == chartIndex ? Colors.blue : Colors.white,
-      shape: RoundedRectangleBorder(
-              side: BorderSide(color: Colors.black45),
-              borderRadius: BorderRadius.all(Radius.circular(3))),
-      child: Text(chartName, style: TextStyle(color: chartName == chartIndex ? Colors.white : Colors.grey)),
-      onPressed: () {
-        this.changeChart(chartName);
-      }
+    return Container(
+      width: btnSize,
+      child: FlatButton(
+        color: chartName == chartIndex ? Colors.blue : Colors.white,
+        shape: RoundedRectangleBorder(
+          side: BorderSide(color: Colors.black45),
+          borderRadius: BorderRadius.all(Radius.circular(3))),
+          child: Text(chartName, style: TextStyle(color: chartName == chartIndex ? Colors.white : Colors.grey)),
+            onPressed: () {
+              this.changeChart(chartName);
+            }
+          ),
     );
   }
 }
