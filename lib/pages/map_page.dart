@@ -22,7 +22,8 @@ class _MapPageState extends State<MapPage>{
 
   /// Set of displayed markers on the map
   List<Marker> markers = <Marker>[];
-  double _currentZoom = 4, pinPillPosition = -100, _pinInfoHeight = 80;
+  double _currentZoom = 4, pinPillPosition = -100, pinInfoHeight = 80;
+  bool isFavorite = false;
   PinInformation currentlySelectedPin = PinInformation(pinPath: 'assets/images/pin-country.png', report: {'cases': 0, 'deaths': 0}, locationName: '', labelColor: Colors.grey);
 
   bool _areMarkersLoading = true;
@@ -78,7 +79,7 @@ class _MapPageState extends State<MapPage>{
     
     if(_db.getString('city_name') != ''){
       controller.moveCamera(CameraUpdate.newCameraPosition(CameraPosition(
-        target: LatLng(_db.getDouble('city_latitude'), _db.getDouble('city_longitude')), zoom: 9))
+        target: LatLng(_db.getDouble('city_latitude'), _db.getDouble('city_longitude')), zoom: 7))
       );
     }
   }
@@ -137,7 +138,8 @@ class _MapPageState extends State<MapPage>{
           setState(() {
             currentlySelectedPin = pinInfo;
             pinPillPosition = 0;
-            _pinInfoHeight = 80;
+            pinInfoHeight = 80;
+            isFavorite = true;
           });
         }
 
@@ -151,7 +153,8 @@ class _MapPageState extends State<MapPage>{
               setState(() {
                 currentlySelectedPin = pinInfo;
                 pinPillPosition = 0;
-                _pinInfoHeight = 80;
+                pinInfoHeight = 80;
+                isFavorite = _db.getString('city_name') == country['country'].toString();
               });
             },
           )
@@ -194,7 +197,8 @@ class _MapPageState extends State<MapPage>{
             setState(() {
               currentlySelectedPin = pinInfo;
               pinPillPosition = 0;
-              _pinInfoHeight = 80;
+              pinInfoHeight = 80;
+              isFavorite = true;
             });
           }
           markers.add(
@@ -207,7 +211,8 @@ class _MapPageState extends State<MapPage>{
                 setState(() {
                   currentlySelectedPin = pinInfo;
                   pinPillPosition = 0;
-                  _pinInfoHeight = 80;
+                  pinInfoHeight = 80;
+                  isFavorite = _db.getString('city_name') == country['province'].toString();
                 });
               },
             )
@@ -279,7 +284,8 @@ class _MapPageState extends State<MapPage>{
             setState(() {
               currentlySelectedPin = pinInfo;
               pinPillPosition = 0;
-              _pinInfoHeight = 80;
+              pinInfoHeight = 80;
+              isFavorite = true;
             });
           }
 
@@ -293,7 +299,8 @@ class _MapPageState extends State<MapPage>{
                 setState(() {
                   currentlySelectedPin = pinInfo;
                   pinPillPosition = 0;
-                  _pinInfoHeight = 80;
+                  pinInfoHeight = 80;
+                  isFavorite = _db.getString('city_name') == city[columnTitles.indexOf("name")];
                 });
               },
             ),
@@ -337,7 +344,8 @@ class _MapPageState extends State<MapPage>{
             setState(() {
               currentlySelectedPin = pinInfo;
               pinPillPosition = 0;
-              _pinInfoHeight = 110;
+              pinInfoHeight = 110;
+              isFavorite = true;
             });
           }
 
@@ -351,7 +359,8 @@ class _MapPageState extends State<MapPage>{
                 setState(() {
                   currentlySelectedPin = pinInfo;
                   pinPillPosition = 0;
-                  _pinInfoHeight = 110;
+                  pinInfoHeight = 110;
+                  isFavorite = _db.getString('city_name') == states[st[columnTitles.indexOf("state")]].name;
                 });
               },
             ),
@@ -396,7 +405,8 @@ class _MapPageState extends State<MapPage>{
           MapPinPillComponent(
             pinPillPosition: pinPillPosition,
             currentlySelectedPin: currentlySelectedPin,
-            height: _pinInfoHeight
+            height: pinInfoHeight,
+            isFavorite: isFavorite,
           ),
           
           SlidingUpPanel(

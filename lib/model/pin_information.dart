@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:like_button/like_button.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:vibration/vibration.dart';
 
 class PinInformation {
   final String pinPath, locationName;
@@ -13,6 +14,7 @@ class PinInformation {
 
 class MapPinPillComponent extends StatefulWidget {
   double pinPillPosition;
+  bool isFavorite;
   final double height;
   final PinInformation currentlySelectedPin;
 
@@ -21,6 +23,7 @@ class MapPinPillComponent extends StatefulWidget {
     this.pinPillPosition,
     this.height,
     this.currentlySelectedPin,
+    this.isFavorite
   }) : super(key: key);
 
   @override
@@ -30,7 +33,6 @@ class MapPinPillComponent extends StatefulWidget {
 class MapPinPillComponentState extends State<MapPinPillComponent> {
   SharedPreferences db;
   String _city = '';
-  bool isFavoriteCity = false;
 
   void initState(){
     super.initState();
@@ -40,26 +42,35 @@ class MapPinPillComponentState extends State<MapPinPillComponent> {
   void initPrefs() async{
     db = await SharedPreferences.getInstance();
     _city = (db.getString('city_name') ?? '');
-    if(_city == widget.currentlySelectedPin.locationName){
+    if(_city != '' && _city == widget.currentlySelectedPin.locationName){
       setState(() {
-        isFavoriteCity = true;
+        widget.isFavorite = true;
+      });
+    }
+  }
+
+  void changeFavoriteCity(isLiked) async{
+    _city = (db.getString('city_name') ?? '');
+    if(_city != widget.currentlySelectedPin.locationName && !isLiked){
+      db.setString('city_name', widget.currentlySelectedPin.locationName);
+      db.setDouble('city_latitude', widget.currentlySelectedPin.lat);
+      db.setDouble('city_longitude', widget.currentlySelectedPin.long);
+      setState(() {
+        widget.isFavorite = true;
+      });
+    } else if(isLiked){
+      db.setString('city_name', '');
+      db.setDouble('city_latitude', 0);
+      db.setDouble('city_longitude', 0);
+      setState(() {
+        widget.isFavorite = false;
       });
     }
   }
 
   Future<bool> onLikeButtonTapped(bool isLiked) async{
-    if(_city != widget.currentlySelectedPin.locationName && !isLiked){
-      db.setString('city_name', widget.currentlySelectedPin.locationName);
-      db.setDouble('city_latitude', widget.currentlySelectedPin.lat);
-      db.setDouble('city_longitude', widget.currentlySelectedPin.long);
-    } else if(isLiked){
-      db.setString('city_name', '');
-      db.setDouble('city_latitude', 0);
-      db.setDouble('city_longitude', 0);
-    }
-    setState(() {
-      isFavoriteCity = !isLiked;
-    });
+    Vibration.vibrate(duration: 10, amplitude: 255);
+    changeFavoriteCity(isLiked);
     return !isLiked;
   }
 
@@ -79,7 +90,7 @@ class MapPinPillComponentState extends State<MapPinPillComponent> {
             height: widget.height,
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.all(Radius.circular(50)),
+              borderRadius: BorderRadius.all(Radius.circular(20)),
               boxShadow: <BoxShadow>[
                 BoxShadow(blurRadius: 10, offset: Offset.zero, color: Colors.grey)
               ]
@@ -97,7 +108,7 @@ class MapPinPillComponentState extends State<MapPinPillComponent> {
                       dotPrimaryColor: Colors.yellowAccent,
                       dotSecondaryColor: Colors.orange,
                     ),
-                    isLiked: isFavoriteCity,
+                    isLiked: widget.isFavorite,
                     likeBuilder: (bool isLiked) {
                       return Icon(
                         isLiked ? Icons.star : Icons.star_border,
@@ -138,7 +149,6 @@ class MapPinPillComponentState extends State<MapPinPillComponent> {
                     ),
                   ),
                 ),
-                
                 GestureDetector(
                   child: Container(
                     child: Padding(
