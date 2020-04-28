@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:like_button/like_button.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PinInformation {
-  final String pinPath;
+  final String pinPath, locationName;
   final Map<dynamic, dynamic> report;
-  final String locationName;
-  Color labelColor;
+  final Color labelColor;
+  final double lat, long;
 
-  PinInformation({this.pinPath, this.report, this.locationName, this.labelColor});
+  PinInformation({this.pinPath, this.report, this.locationName, this.labelColor, this.lat, this.long});
 }
 
 class MapPinPillComponent extends StatefulWidget {
-
   double pinPillPosition;
   final double height;
   final PinInformation currentlySelectedPin;
@@ -27,6 +28,40 @@ class MapPinPillComponent extends StatefulWidget {
 }
 
 class MapPinPillComponentState extends State<MapPinPillComponent> {
+  SharedPreferences db;
+  String _city = '';
+  bool isFavoriteCity = false;
+
+  void initState(){
+    super.initState();
+    initPrefs();
+  }
+  
+  void initPrefs() async{
+    db = await SharedPreferences.getInstance();
+    _city = (db.getString('city_name') ?? '');
+    if(_city == widget.currentlySelectedPin.locationName){
+      setState(() {
+        isFavoriteCity = true;
+      });
+    }
+  }
+
+  Future<bool> onLikeButtonTapped(bool isLiked) async{
+    if(_city != widget.currentlySelectedPin.locationName && !isLiked){
+      db.setString('city_name', widget.currentlySelectedPin.locationName);
+      db.setDouble('city_latitude', widget.currentlySelectedPin.lat);
+      db.setDouble('city_longitude', widget.currentlySelectedPin.long);
+    } else if(isLiked){
+      db.setString('city_name', '');
+      db.setDouble('city_latitude', 0);
+      db.setDouble('city_longitude', 0);
+    }
+    setState(() {
+      isFavoriteCity = !isLiked;
+    });
+    return !isLiked;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +81,7 @@ class MapPinPillComponentState extends State<MapPinPillComponent> {
               color: Colors.white,
               borderRadius: BorderRadius.all(Radius.circular(50)),
               boxShadow: <BoxShadow>[
-                BoxShadow(blurRadius: 20, offset: Offset.zero, color: Colors.grey.withOpacity(0.9))
+                BoxShadow(blurRadius: 10, offset: Offset.zero, color: Colors.grey)
               ]
             ),
             child: Row(
@@ -54,12 +89,24 @@ class MapPinPillComponentState extends State<MapPinPillComponent> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 Container(
-                  width: 40, height: 40,
-                  margin: EdgeInsets.only(left: 10),
-                  child: Padding(
-                    padding: EdgeInsets.all(10),
-                    child: new Image.asset(widget.currentlySelectedPin.pinPath, width: 50, height: 40),
-                  )
+                  margin: EdgeInsets.only(left: 15),
+                  child: LikeButton(
+                    size: 30,
+                    circleColor: CircleColor(start: Colors.yellowAccent, end: Colors.orange),
+                    bubblesColor: BubblesColor(
+                      dotPrimaryColor: Colors.yellowAccent,
+                      dotSecondaryColor: Colors.orange,
+                    ),
+                    isLiked: isFavoriteCity,
+                    likeBuilder: (bool isLiked) {
+                      return Icon(
+                        isLiked ? Icons.star : Icons.star_border,
+                        color: isLiked ? Colors.yellow[600] : Colors.grey,
+                        size: 30,
+                      );
+                    },
+                    onTap: onLikeButtonTapped,
+                  ),
                 ),
                 Expanded(
                   child: Container(
@@ -68,18 +115,36 @@ class MapPinPillComponentState extends State<MapPinPillComponent> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
-                        Text(widget.currentlySelectedPin.locationName, style: TextStyle(color: widget.currentlySelectedPin.labelColor, fontSize: 14, fontWeight: FontWeight.bold)),
-                        if(widget.currentlySelectedPin.report['cases'] != null) Text('Casos Confirmados: ${widget.currentlySelectedPin.report['cases'].toString()}', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
-                        if(widget.currentlySelectedPin.report['recovered'] != null) Text('Casos Recuperados: ${widget.currentlySelectedPin.report['recovered'].toString()}', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
-                        if(widget.currentlySelectedPin.report['deaths'] != null) Text('Casos Fatais: ${widget.currentlySelectedPin.report['deaths'].toString()}', style: TextStyle(fontSize: 14, color: Colors.grey[600]))
+                        RichText(
+                          text: TextSpan(
+                            style: TextStyle(color: widget.currentlySelectedPin.labelColor, fontSize: 14, fontWeight: FontWeight.bold),
+                            children: [
+                              WidgetSpan(
+                                child: Padding(
+                                  padding: EdgeInsets.only(right: 5.0),
+                                  child: Icon(Icons.location_on, color: widget.currentlySelectedPin.labelColor, size: 16),
+                                ),
+                              ),
+                              TextSpan(text: widget.currentlySelectedPin.locationName),
+                            ],
+                          ),
+                        ),
+                        if(widget.currentlySelectedPin.report['cases'] != null) Text('Casos Confirmados: ${widget.currentlySelectedPin.report['cases'].toString()}', style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+                        if(widget.currentlySelectedPin.report['recovered'] != null) Text('Casos Recuperados: ${widget.currentlySelectedPin.report['recovered'].toString()}', style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+                        if(widget.currentlySelectedPin.report['deaths'] != null) Text('Casos Fatais: ${widget.currentlySelectedPin.report['deaths'].toString()}', style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+                        if(widget.currentlySelectedPin.report['total_per100k'] != null) Text('Casos por 100 mil: ${widget.currentlySelectedPin.report['total_per100k'].toString()}', style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+                        if(widget.currentlySelectedPin.report['deaths_per100k'] != null) Text('Mortes por 100 mil: ${widget.currentlySelectedPin.report['deaths_per100k'].toString()}', style: TextStyle(fontSize: 13, color: Colors.grey[600])),
                       ],
                     ),
                   ),
                 ),
+                
                 GestureDetector(
-                  child: Padding(
-                    padding: EdgeInsets.all(15),
-                    child: Icon(Icons.close, color: Colors.grey,),
+                  child: Container(
+                    child: Padding(
+                      padding: EdgeInsets.all(15),
+                      child: Icon(Icons.close, color: Colors.grey,),
+                    ),
                   ),
                   onTap: (){
                     setState(() {

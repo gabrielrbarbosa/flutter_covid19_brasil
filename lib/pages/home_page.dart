@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:statusbar/statusbar.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:covid_19_brasil/pages/charts_page.dart';
 import 'package:covid_19_brasil/pages/map_page.dart';
@@ -37,6 +38,7 @@ class _HomePageState extends State<HomePage> {
 
   void initState(){
     super.initState();
+    StatusBar.color(Colors.blue[400]);
     _initPackageInfo();
   }
 

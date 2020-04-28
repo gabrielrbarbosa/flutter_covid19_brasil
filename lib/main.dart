@@ -1,14 +1,9 @@
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:splashscreen/splashscreen.dart';
 import 'package:covid_19_brasil/pages/home_page.dart';
 
 void main() {
-  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-    systemNavigationBarColor: Colors.blue, // navigation bar color
-    statusBarColor: Colors.blue, // status bar color
-  ));
   runApp(MainPage());
 }
 

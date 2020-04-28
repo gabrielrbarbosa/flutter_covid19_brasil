@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:covid_19_brasil/states.dart';
 import 'package:covid_19_brasil/model/info_widget.dart';
@@ -21,12 +22,13 @@ class _MapPageState extends State<MapPage>{
 
   /// Set of displayed markers on the map
   List<Marker> markers = <Marker>[];
-  double _currentZoom = 4, pinPillPosition = -100, _pinInfoHeight = 65;
+  double _currentZoom = 4, pinPillPosition = -100, _pinInfoHeight = 80;
   PinInformation currentlySelectedPin = PinInformation(pinPath: 'assets/images/pin-country.png', report: {'cases': 0, 'deaths': 0}, locationName: '', labelColor: Colors.grey);
 
   bool _areMarkersLoading = true;
   BitmapDescriptor bitmapIconCity, bitmapIconState, bitmapIconCountry;
   String errorMsg, _mapStyle;
+  SharedPreferences _db;
 
   Map<String, dynamic> _countryInfo = {'cases': 0, 'active': 0, 'recovered': 0, 'deaths': 0, 'fatality': 0, 'tests': 0,
                                       'casesPerOneMillion' : 0, 'deathsPerOneMillion' : 0, 'testsPerOneMillion' : 0};
@@ -59,6 +61,7 @@ class _MapPageState extends State<MapPage>{
     rootBundle.loadString('assets/map-style.txt').then((string) {
       _mapStyle = string;
     });
+    _db = await SharedPreferences.getInstance();
   }
 
    /// Called when the Google Map widget is created. Updates the map loading state and inits the markers.
@@ -71,6 +74,13 @@ class _MapPageState extends State<MapPage>{
     
     fetchAllStates();
     fetchAllCountries();
+
+    
+    if(_db.getString('city_name') != ''){
+      controller.moveCamera(CameraUpdate.newCameraPosition(CameraPosition(
+        target: LatLng(_db.getDouble('city_latitude'), _db.getDouble('city_longitude')), zoom: 9))
+      );
+    }
   }
 
   fetchGlobal() async{
@@ -116,10 +126,21 @@ class _MapPageState extends State<MapPage>{
 
         PinInformation pinInfo = new PinInformation(
           locationName: country['country'].toString(),
+          lat: double.parse(country['countryInfo']['lat'].toString()),
+          long: double.parse(country['countryInfo']['long'].toString()),
           pinPath: "assets/images/pin-country.png",
           report: {'cases': formatted(country['cases'].toString()), 'deaths': infoDeaths, 'recovered': formatted(country['recovered'].toString())},
           labelColor: Colors.blue[800]
         );
+
+        if(_db.getString('city_name') == country['country'].toString()){
+          setState(() {
+            currentlySelectedPin = pinInfo;
+            pinPillPosition = 0;
+            _pinInfoHeight = 80;
+          });
+        }
+
         markers.add(
           Marker(
             markerId: new MarkerId(country['country'].toString()),
@@ -162,10 +183,20 @@ class _MapPageState extends State<MapPage>{
 
           PinInformation pinInfo = new PinInformation(
             locationName: country['province'].toString(),
+            lat: double.parse(country['coordinates']['latitude']),
+            long: double.parse(country['coordinates']['longitude']),
             pinPath: "assets/images/pin-state.png",
             report: {'cases': formatted(country['stats']['confirmed'].toString()), 'deaths': infoDeaths, 'recovered': formatted(country['stats']['recovered'].toString())},
             labelColor: Colors.green
           );
+
+          if(_db.getString('city_name') == country['province'].toString()){
+            setState(() {
+              currentlySelectedPin = pinInfo;
+              pinPillPosition = 0;
+              _pinInfoHeight = 80;
+            });
+          }
           markers.add(
             Marker(
               markerId: new MarkerId(country['province'].toString()),
@@ -235,10 +266,23 @@ class _MapPageState extends State<MapPage>{
 
           PinInformation pinInfo = new PinInformation(
             locationName: city[columnTitles.indexOf("name")],
+            lat: double.parse(city[columnTitles.indexOf("lat")].toString()),
+            long: double.parse(city[columnTitles.indexOf("lon")].toString()),
             pinPath: "assets/images/pin-city.png",
-            report: {'cases': formatted(city[columnTitles.indexOf("total")]), 'deaths': infoDeaths},
+            report: {'cases': formatted(city[columnTitles.indexOf("total")]), 'deaths': infoDeaths, 
+              'total_per100k': city[columnTitles.indexOf("total_per_100k_inhabitants")].toString()
+            },
             labelColor: Colors.red
           );
+
+          if(_db.getString('city_name') == city[columnTitles.indexOf("name")]){
+            setState(() {
+              currentlySelectedPin = pinInfo;
+              pinPillPosition = 0;
+              _pinInfoHeight = 80;
+            });
+          }
+
           markers.add(
             Marker(
               markerId: markerId,
@@ -249,7 +293,7 @@ class _MapPageState extends State<MapPage>{
                 setState(() {
                   currentlySelectedPin = pinInfo;
                   pinPillPosition = 0;
-                  _pinInfoHeight = 65;
+                  _pinInfoHeight = 80;
                 });
               },
             ),
@@ -271,7 +315,7 @@ class _MapPageState extends State<MapPage>{
             states[st[columnTitles.indexOf("state")]].latitute, 
             states[st[columnTitles.indexOf("state")]].longitude
           );
-          //InfoWindow info = new InfoWindow(title: states[st[columnTitles.indexOf("state")]].name, snippet: 'Total: ' + formatted(st[columnTitles.indexOf("totalCases")]) + ' / Fatais: ' + formatted(st[columnTitles.indexOf("deaths")]));
+
           MarkerId markerId = MarkerId(st[columnTitles.indexOf("state")]);
           String fatality = ((int.parse(st[columnTitles.indexOf("deaths")]) / int.parse(st[columnTitles.indexOf("totalCases")])) * 100).toStringAsFixed(2);
           String infoDeaths = formatted(st[columnTitles.indexOf("deaths")]) + ' (' + fatality + '%)';
@@ -279,10 +323,24 @@ class _MapPageState extends State<MapPage>{
 
           PinInformation pinInfo = new PinInformation(
             locationName: states[st[columnTitles.indexOf("state")]].name,
+            lat: states[st[columnTitles.indexOf("state")]].latitute, 
+            long: states[st[columnTitles.indexOf("state")]].longitude,
             pinPath: "assets/images/pin-state.png",
-            report: {'cases': formatted(st[columnTitles.indexOf("totalCases")]), 'deaths': infoDeaths},
+            report: {'cases': formatted(st[columnTitles.indexOf("totalCases")]), 'deaths': infoDeaths, 'recovered': formatted(st[columnTitles.indexOf("recovered")]),
+              'total_per100k': st[columnTitles.indexOf("totalCases_per_100k_inhabitants")].toString(),
+              'deaths_per100k': st[columnTitles.indexOf("deaths_per_100k_inhabitants")].toString()
+            },
             labelColor: Colors.green
           );
+
+          if(_db.getString('city_name') == states[st[columnTitles.indexOf("state")]].name){
+            setState(() {
+              currentlySelectedPin = pinInfo;
+              pinPillPosition = 0;
+              _pinInfoHeight = 110;
+            });
+          }
+
           markers.add(
             Marker(
               markerId: markerId,
@@ -293,7 +351,7 @@ class _MapPageState extends State<MapPage>{
                 setState(() {
                   currentlySelectedPin = pinInfo;
                   pinPillPosition = 0;
-                  _pinInfoHeight = 65;
+                  _pinInfoHeight = 110;
                 });
               },
             ),
@@ -310,6 +368,7 @@ class _MapPageState extends State<MapPage>{
   }
 
   String formatted(String str){
+    if(str == '') return "";
     int val = int.parse(str);
     return new NumberFormat.decimalPattern('pt').format(val).toString();
   }
