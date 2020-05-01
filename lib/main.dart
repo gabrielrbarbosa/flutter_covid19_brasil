@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:splashscreen/splashscreen.dart';
 import 'package:covid_19_brasil/pages/home_page.dart';
@@ -7,26 +6,7 @@ void main() {
   runApp(MainPage());
 }
 
-class DrawerItem {
-  String title;
-  IconData icon;
-  DrawerItem(this.title, this.icon);
-}
-
-class MainPage extends StatefulWidget {  
-  final drawerItems = [
-    new DrawerItem("Mapa Geral", Icons.location_on),
-    new DrawerItem("Estatísticas", Icons.show_chart),
-    new DrawerItem("Dados por Estado", Icons.map),
-    new DrawerItem("Ministério da Saúde", Icons.new_releases)
-  ];
-  @override
-  State<StatefulWidget> createState() {
-    return _MainPage();
-  }
-}
-
-class _MainPage extends State<MainPage> {
+class MainPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(

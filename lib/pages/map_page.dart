@@ -22,7 +22,7 @@ class _MapPageState extends State<MapPage>{
 
   /// Set of displayed markers on the map
   List<Marker> markers = <Marker>[];
-  double _currentZoom = 4, pinPillPosition = -100;
+  double _currentZoom = 4, pinPillPosition = -170;
   bool isFavorite = false;
   PinInformation currentlySelectedPin = PinInformation(pinPath: 'assets/images/pin-country.png', report: {'cases': 0, 'deaths': 0}, locationName: '', labelColor: Colors.grey);
 
@@ -130,8 +130,10 @@ class _MapPageState extends State<MapPage>{
           lat: double.parse(country['countryInfo']['lat'].toString()),
           long: double.parse(country['countryInfo']['long'].toString()),
           pinPath: "assets/images/pin-country.png",
-          report: {'cases': formatted(country['cases'].toString()), 'deaths': infoDeaths, 'recovered': formatted(country['recovered'].toString())},
-          labelColor: Colors.blue[800]
+          report: {'cases': formatted(country['cases'].toString()), 'deaths': infoDeaths, 'recovered': formatted(country['recovered'].toString()), 
+            'cases_per1M': formatted(country['casesPerOneMillion'].toString()), 'deaths_per1M': formatted(country['deathsPerOneMillion'].toString())
+          },
+          labelColor: Colors.blue[700]
         );
 
         if(_db.getString('favorite_name') == country['country'].toString()){
@@ -188,7 +190,7 @@ class _MapPageState extends State<MapPage>{
             long: double.parse(country['coordinates']['longitude']),
             pinPath: "assets/images/pin-state.png",
             report: {'cases': formatted(country['stats']['confirmed'].toString()), 'deaths': infoDeaths, 'recovered': formatted(country['stats']['recovered'].toString())},
-            labelColor: Colors.green
+            labelColor: Colors.green[400]
           );
 
           if(_db.getString('favorite_name') == country['province'].toString()){
@@ -204,7 +206,7 @@ class _MapPageState extends State<MapPage>{
               position: location,
               icon: bitmapIconState,
               onTap: () {
-                Vibration.vibrate(duration: 10, amplitude: 10);
+                Vibration.vibrate(duration: 10, amplitude: 255);
                 setState(() {
                   currentlySelectedPin = pinInfo;
                   pinPillPosition = 0;
@@ -271,7 +273,7 @@ class _MapPageState extends State<MapPage>{
             long: double.parse(city[columnTitles.indexOf("lon")].toString()),
             pinPath: "assets/images/pin-city.png",
             report: {'cases': formatted(city[columnTitles.indexOf("total")]), 'deaths': infoDeaths, 
-              'total_per100k': city[columnTitles.indexOf("total_per_100k_inhabitants")].toString()
+              'cases_per100k': city[columnTitles.indexOf("total_per_100k_inhabitants")].toString()
             },
             labelColor: Colors.red
           );
@@ -290,7 +292,7 @@ class _MapPageState extends State<MapPage>{
               position: markerLocation,
               icon: bitmapIconCity,
               onTap: () {
-                Vibration.vibrate(duration: 10, amplitude: 10);
+                Vibration.vibrate(duration: 10, amplitude: 255);
                 setState(() {
                   currentlySelectedPin = pinInfo;
                   pinPillPosition = 0;
@@ -328,10 +330,11 @@ class _MapPageState extends State<MapPage>{
             long: states[st[columnTitles.indexOf("state")]].longitude,
             pinPath: "assets/images/pin-state.png",
             report: {'cases': formatted(st[columnTitles.indexOf("totalCases")]), 'deaths': infoDeaths, 'recovered': formatted(st[columnTitles.indexOf("recovered")]),
-              'total_per100k': st[columnTitles.indexOf("totalCases_per_100k_inhabitants")].toString(),
+              'suspects': formatted(st[columnTitles.indexOf("suspects")]), 'tests': formatted(st[columnTitles.indexOf("tests")]),
+              'cases_per100k': st[columnTitles.indexOf("totalCases_per_100k_inhabitants")].toString(),
               'deaths_per100k': st[columnTitles.indexOf("deaths_per_100k_inhabitants")].toString()
             },
-            labelColor: Colors.green
+            labelColor: Colors.green[400]
           );
 
           if(_db.getString('favorite_name') == states[st[columnTitles.indexOf("state")]].name){
@@ -348,7 +351,7 @@ class _MapPageState extends State<MapPage>{
               position: markerLocation,
               icon: bitmapIconState,
               onTap: () {
-                Vibration.vibrate(duration: 10, amplitude: 10);
+                Vibration.vibrate(duration: 10, amplitude: 255);
                 setState(() {
                   currentlySelectedPin = pinInfo;
                   pinPillPosition = 0;
@@ -379,7 +382,6 @@ class _MapPageState extends State<MapPage>{
     return Scaffold(
       body: Stack(
         children: <Widget>[
-          // Google Map widget
           Opacity(
             opacity: _areMarkersLoading ? 0 : 1,
             child: GoogleMap(
@@ -415,46 +417,48 @@ class _MapPageState extends State<MapPage>{
           ),
 
           if(errorMsg != null)
-          (AlertDialog(
-            title: Text('Aviso'),
-            content: SingleChildScrollView(
-              child: ListBody(
-                children: <Widget>[
-                  Text(errorMsg),
-                  Text('Verifique sua conexão com a Internet ou tente novamente mais tarde.'),
-                ],
+            (AlertDialog(
+              title: Text('Aviso'),
+              content: SingleChildScrollView(
+                child: ListBody(
+                  children: <Widget>[
+                    Text(errorMsg),
+                    Text('Verifique sua conexão com a Internet ou tente novamente mais tarde.'),
+                  ],
+                ),
               ),
-            ),
-            actions: <Widget>[
-              FlatButton(
-                child: Text('OK'),
-                onPressed: () {
-                  setState(() {
-                    errorMsg = null;
-                  });
-                },
-              ),
-            ],
-          )),
+              actions: <Widget>[
+                FlatButton(
+                  child: Text('OK'),
+                  onPressed: () {
+                    setState(() {
+                      errorMsg = null;
+                    });
+                  },
+                ),
+              ],
+            )
+          ),
 
           // Map markers loading indicator
           if (_areMarkersLoading)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: Card(
-                  elevation: 2,
-                  color: Colors.grey,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: Text(
-                      'Carregando...',
-                      style: TextStyle(color: Colors.white),
+            (Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: Card(
+                    elevation: 2,
+                    color: Colors.grey,
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Text(
+                        'Carregando...',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                   ),
                 ),
-              ),
+              )
             ),
         ],
       ),

@@ -1,3 +1,4 @@
+import 'package:feature_discovery/feature_discovery.dart';
 import 'package:flutter/material.dart';
 import 'package:statusbar/statusbar.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -146,7 +147,8 @@ class _HomePageState extends State<HomePage> {
           onTap: () => aboutApp(),
         )
     );
-    return new Scaffold(
+    return FeatureDiscovery(
+      child: Scaffold(
         key: _scaffoldKey,
         appBar: new AppBar(
           title: new Text(widget.drawerItems[_selectedDrawerIndex].title),
@@ -167,6 +169,7 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         body: _getDrawerItemWidget(_selectedDrawerIndex),
+      ),
     );
   }
 }
