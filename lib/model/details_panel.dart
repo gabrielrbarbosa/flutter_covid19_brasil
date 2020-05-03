@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class Details extends StatelessWidget {
+  final Function configMarkers;
   final Map report;
   final Map reportBR;
-  Details({Key key, @required this.report, @required this.reportBR}) : super(key: key);
+  final int minCasesCity;
+
+  Details({Key key, this.configMarkers, this.report, this.reportBR, this.minCasesCity}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -12,8 +15,48 @@ class Details extends StatelessWidget {
       child: Column(
         children: <Widget>[
           SizedBox(
-            height: 15.0,
+            height: 30.0,
           ),
+          Text('Mostrar Cidades com: '),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: <Widget>[
+              Radio(
+                value: 0,
+                groupValue: minCasesCity,
+                onChanged: (value){
+                  this.configMarkers(value);
+                }
+              ),
+              Text(
+                '1+ Casos',
+                style: Theme.of(context).textTheme.caption,
+              ),
+              Radio(
+                value: 100,
+                groupValue: minCasesCity,
+                onChanged: (value){
+                  this.configMarkers(value);
+                }
+              ),
+              Text(
+                '100+ Casos',
+                style: Theme.of(context).textTheme.caption,
+              ),
+              Radio(
+                value: 1000,
+                groupValue: minCasesCity,
+                onChanged: (value){
+                  this.configMarkers(value);
+                }
+              ),
+              Text(
+                '1000+ Casos',
+                style: Theme.of(context).textTheme.caption,
+              ),
+            ]
+          ),
+
           Container(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -41,17 +84,9 @@ class Details extends StatelessWidget {
               ],
             ),
           ),
-          Container(
-            margin: EdgeInsets.all(6.0),
-            padding: EdgeInsets.all(6.0),
-            child:
-              Text(
-                'Casos por 1 milhão de habitantes: ' + formatted(reportBR['casesPerOneMillion']) +
-                '\nMortes por 1 milhão de habitantes: ' + formatted(reportBR['deathsPerOneMillion']) +
-                '\nTestes por 1 milhão de habitantes: ' + formatted(reportBR['testsPerOneMillion']),
-                style: Theme.of(context).textTheme.caption,
-              ),
-            ),
+          SizedBox(
+            height: 10.0,
+          ),
           Container(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -123,9 +158,7 @@ Widget createDetailItem({BuildContext context, String value, Color color, String
             children: <Widget>[
               Text(
                 '$value',
-                style: Theme.of(context)
-                    .textTheme
-                    .headline5,
+                style: Theme.of(context).textTheme.headline5,
               ),
             ],
           )

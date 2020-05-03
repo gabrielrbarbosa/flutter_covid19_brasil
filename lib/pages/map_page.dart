@@ -8,7 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:covid_19_brasil/states.dart';
-import 'package:covid_19_brasil/model/info_widget.dart';
+import 'package:covid_19_brasil/model/details_panel.dart';
 import 'package:covid_19_brasil/model/pin_information.dart';
 import 'package:vibration/vibration.dart';
 
@@ -22,7 +22,10 @@ class _MapPageState extends State<MapPage>{
 
   /// Set of displayed markers on the map
   List<Marker> markers = <Marker>[];
+  List<Circle> circles = <Circle>[];
   double _currentZoom = 4, pinPillPosition = -170;
+  int _minCasesCity = 100;
+  
   bool isFavorite = false;
   PinInformation currentlySelectedPin = PinInformation(pinPath: 'assets/images/pin-country.png', report: {'cases': 0, 'deaths': 0}, locationName: '', labelColor: Colors.grey);
 
@@ -63,6 +66,27 @@ class _MapPageState extends State<MapPage>{
       _mapStyle = string;
     });
     _db = await SharedPreferences.getInstance();
+    _minCasesCity = (_db.getInt('minCasesCity') ?? 0);
+  }
+
+  void configMarkers(value){
+    _db.setInt('minCasesCity', value);
+    setState(() {
+      _minCasesCity = value;
+    });
+
+    List<Marker> newMarkers = [];
+    markers.forEach((mk) { 
+      if(!mk.markerId.toString().contains('/')){
+        newMarkers.add(mk);
+      }
+    });
+    setState(() {
+      markers = newMarkers;
+      circles = [];
+    });
+
+    fetchCsvFile('https://raw.githubusercontent.com/wcota/covid19br/master/cases-gps.csv', 'cases-gps.csv');
   }
 
    /// Called when the Google Map widget is created. Updates the map loading state and inits the markers.
@@ -244,7 +268,6 @@ class _MapPageState extends State<MapPage>{
   }
 
   void _createMarkers(txt, filename) async{
-    //InfoWindow info;
     var rows = txt.split("\n");
 
     if(filename == 'cases-gps.csv'){
@@ -262,7 +285,7 @@ class _MapPageState extends State<MapPage>{
           var deaths = '0';
           if(nextType == 'D0' || nextType == 'D1') deaths = rows[count].split(',')[columnTitles.indexOf("total")];
           
-          MarkerId markerId = MarkerId((count).toString());
+          MarkerId markerId = MarkerId(city[columnTitles.indexOf("name")].toString());
           String fatality = ((int.parse(deaths) / int.parse(city[columnTitles.indexOf("total")])) * 100).toStringAsFixed(2);
           String infoDeaths = formatted(deaths) + ' (' + fatality + '%)';
           if(fatality == '0.00') infoDeaths = formatted(deaths);
@@ -286,21 +309,39 @@ class _MapPageState extends State<MapPage>{
             });
           }
 
-          markers.add(
-            Marker(
-              markerId: markerId,
-              position: markerLocation,
-              icon: bitmapIconCity,
-              onTap: () {
-                Vibration.vibrate(duration: 10, amplitude: 255);
-                setState(() {
-                  currentlySelectedPin = pinInfo;
-                  pinPillPosition = 0;
-                  isFavorite = _db.getString('favorite_name') == city[columnTitles.indexOf("name")];
-                });
-              },
-            ),
-          );
+          if(int.parse(city[columnTitles.indexOf("total")]) >= _minCasesCity || _db.getString('favorite_name') == city[columnTitles.indexOf("name")]){
+            markers.add(
+              Marker(
+                markerId: markerId,
+                position: markerLocation,
+                icon: bitmapIconCity,
+                onTap: () {
+                  Vibration.vibrate(duration: 10, amplitude: 255);
+                  setState(() {
+                    currentlySelectedPin = pinInfo;
+                    pinPillPosition = 0;
+                    isFavorite = _db.getString('favorite_name') == city[columnTitles.indexOf("name")];
+                  });
+                },
+              ),
+            );
+          }
+
+          if(int.parse(city[columnTitles.indexOf("total")]) >= 100 && int.parse(city[columnTitles.indexOf("total")]) >= _minCasesCity){
+            double radius = double.parse(city[columnTitles.indexOf("total")].toString()) * 4;
+            if(radius > 10000) radius = double.parse(city[columnTitles.indexOf("total")].toString()) * 2;
+            else if(radius > 20000) radius = double.parse(city[columnTitles.indexOf("total")].toString());
+            else if(radius > 50000) radius = 50000;
+
+            circles.add(Circle(
+              circleId: CircleId('circle-' + city[columnTitles.indexOf("name")]),
+              center: LatLng(double.parse(city[columnTitles.indexOf("lat")].toString()), double.parse(city[columnTitles.indexOf("lon")].toString())),
+              radius: radius,
+              strokeColor: Color.fromARGB(100, 200, 40, 40),
+              fillColor: Color.fromARGB(30, 240, 40, 40),
+              strokeWidth: 2,
+            ));
+          }
         }
         count++;
         return true;
@@ -392,6 +433,7 @@ class _MapPageState extends State<MapPage>{
                 zoom: _currentZoom,
               ),
               markers: Set<Marker>.of(markers),
+              circles: Set<Circle>.of(circles),
               onMapCreated: (controller) => _onMapCreated(controller)
             ),
           ),
@@ -408,11 +450,11 @@ class _MapPageState extends State<MapPage>{
             backdropTapClosesPanel: true,
             backdropEnabled: true,
             header: Container(width: MediaQuery.of(context).size.width,height: 10, padding: new EdgeInsets.all(4.0),child: Align(alignment: Alignment.topCenter, child: Icon(Icons.arrow_upward, size: 18, color: Colors.blue))),
-            minHeight: 95,
-            maxHeight: 550,
-            borderRadius: BorderRadius.only(topLeft: Radius.circular(20.0), topRight: Radius.circular(20.0)),
+            minHeight: 90,
+            maxHeight: 570,
+            borderRadius: BorderRadius.only(topLeft: Radius.circular(30.0), topRight: Radius.circular(30.0)),
             panel: Center(
-              child: Details(report: _globalInfo, reportBR: _countryInfo),
+              child: Details(configMarkers: configMarkers, minCasesCity: _minCasesCity, report: _globalInfo, reportBR: _countryInfo),
             ),
           ),
 
