@@ -21,7 +21,7 @@ class _ChartsPageState extends State<ChartsPage> {
   List<TimeSeriesCovidDouble> lineFatality = [];
   List<charts.Series<dynamic, DateTime>> lineChart = [];
 
-  String _selectedType = 'Brasil', _selectedRegion = 'TOTAL', _selectedLabel = '', _pointSelected, errorMsg;
+  String _selectedType = 'Brasil', _selectedRegion = 'TOTAL', _selectedLabel = '', _pointSelected, _daySelected, errorMsg;
   List<String> _locations = ['Brasil', 'Estados', 'Cidades'], _locationsStates = [], _locationsRegions = [], _locationsCities = [], _locationsCitiesLoad = [];
   List fileDataCities, fileDataStates;
   DateTime _timeSelected;
@@ -191,21 +191,30 @@ class _ChartsPageState extends State<ChartsPage> {
     final selectedDatum = model.selectedDatum;
     DateTime time;
     String selected;
+    
 
     if (selectedDatum.isNotEmpty) {
       time = selectedDatum.first.datum.time;
       selectedDatum.forEach((charts.SeriesDatum datumPair) {
         if(chartIndex == 'Letalidade'){
-          selected = datumPair.datum.ratio.toString() + '% de';
+          selected = datumPair.datum.ratio.toString() + '%';
         } else{
           selected = formatted(datumPair.datum.cases.toString());
         }
       });
       Vibration.vibrate(duration: 10, amplitude: 255);
 
+      int daysDiff = time.difference(selectedDatum[0].series.data[0].time).inDays + 1;
+
       setState(() {
         _timeSelected = time;
         _pointSelected = selected;
+        _daySelected = daysDiff.toString();
+      });
+
+      ToolTipMgr.setTitle({
+        'title': selected,
+        'subTitle': formatDate(_timeSelected, [dd, '/', mm, '/', yyyy])
       });
     }
   }
@@ -272,6 +281,9 @@ class _ChartsPageState extends State<ChartsPage> {
               type: charts.SelectionModelType.info,
               changedListener: _onSelectionChanged,
             )
+          ],
+          behaviors: [
+            charts.LinePointHighlighter(symbolRenderer: CustomCircleSymbolRenderer())
           ],
         );
       }
@@ -474,10 +486,11 @@ class _ChartsPageState extends State<ChartsPage> {
                   padding: new EdgeInsets.all(16.0),
                   child: Text(
                     _timeSelected != null ? 
-                    _pointSelected + " " + chartIndex + " em " + formatDate(_timeSelected, [dd, '/', mm, '/', yyyy]) :
+                    _pointSelected + " " + chartIndex + " em " + formatDate(_timeSelected, [dd, '/', mm, '/', yyyy]) + 
+                      ' (' + _daySelected + 'º dia)' :
                     "Toque nos pontos para + info",
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                 ),
               )
