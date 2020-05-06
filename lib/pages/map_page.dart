@@ -5,14 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:covid_19_brasil/states.dart';
 import 'package:covid_19_brasil/model/details_panel.dart';
 import 'package:covid_19_brasil/model/pin_information.dart';
 import 'package:vibration/vibration.dart';
-
-import '../model/pin_information.dart';
 
 class MapPage extends StatefulWidget {
   @override
@@ -37,6 +36,7 @@ class _MapPageState extends State<MapPage>{
   BitmapDescriptor bitmapIconCity, bitmapIconState, bitmapIconCountry;
   String errorMsg, _mapStyle;
   SharedPreferences _db;
+  PermissionStatus _showLocation;
 
   Map<String, dynamic> _countryInfo = {'cases': 0, 'active': 0, 'recovered': 0, 'deaths': 0, 'fatality': 0, 'tests': 0,
                                       'casesPerOneMillion' : 0, 'deathsPerOneMillion' : 0, 'testsPerOneMillion' : 0};
@@ -45,32 +45,34 @@ class _MapPageState extends State<MapPage>{
   void initState(){
     super.initState();
     loadPrefs();
-
+    requestPermission(Permission.location);
     fetchCountry('brazil');
     fetchGlobal();
   }
 
+  Future<void> requestPermission(Permission permission) async {
+    PermissionStatus showLocation = await permission.request();
+    setState(() {
+      _showLocation = showLocation; 
+    });
+  }
+
   void loadPrefs() async{
-    BitmapDescriptor.fromAssetImage(ImageConfiguration(size: Size(64, 64)),
-        'assets/images/pin-city.png')
-    .then((d) {
-      bitmapIconCity = d;
-    });
-    BitmapDescriptor.fromAssetImage(ImageConfiguration(size: Size(64, 64)),
-        'assets/images/pin-state.png')
-    .then((d) {
-      bitmapIconState = d;
-    });
-    BitmapDescriptor.fromAssetImage(ImageConfiguration(size: Size(64, 64)),
-        'assets/images/pin-country.png')
-    .then((d) {
-      bitmapIconCountry = d;
-    });
-    rootBundle.loadString('assets/map-style.txt').then((string) {
-      _mapStyle = string;
-    });
+    BitmapDescriptor.fromAssetImage(ImageConfiguration(size: Size(64, 64)), 'assets/images/pin-city.png').then((d) {bitmapIconCity = d;});
+    BitmapDescriptor.fromAssetImage(ImageConfiguration(size: Size(64, 64)), 'assets/images/pin-state.png').then((d) {bitmapIconState = d;});
+    BitmapDescriptor.fromAssetImage(ImageConfiguration(size: Size(64, 64)), 'assets/images/pin-country.png').then((d) {bitmapIconCountry = d;});
+
+    rootBundle.loadString('assets/map-style.txt').then((string) { _mapStyle = string; });    
     _db = await SharedPreferences.getInstance();
     _minCasesCity = (_db.getInt('minCasesCity') ?? 0);
+  }
+  
+  void goToFavoriteLocation(){
+    if(_db.getString('favorite_name') != '' && _db.getDouble('favorite_latitude') != null){
+      _mapControllerLoaded.moveCamera(CameraUpdate.newCameraPosition(CameraPosition(
+        target: LatLng(_db.getDouble('favorite_latitude'), _db.getDouble('favorite_longitude')), zoom: 10))
+      );
+    }
   }
 
   void configMarkers(value){
@@ -104,16 +106,9 @@ class _MapPageState extends State<MapPage>{
     
     fetchAllStates();
     fetchAllCountries();
-
-    
-    if(_db.getString('favorite_name') != ''){
-      controller.moveCamera(CameraUpdate.newCameraPosition(CameraPosition(
-        target: LatLng(_db.getDouble('favorite_latitude'), _db.getDouble('favorite_longitude')), zoom: 9))
-      );
-    }
   }
 
-  fetchGlobal() async{
+  void fetchGlobal() async{
     final response = await http.get('https://corona.lmao.ninja/v2/all');
 
     if (response.statusCode == 200) {
@@ -128,7 +123,7 @@ class _MapPageState extends State<MapPage>{
     }
   }
 
-  fetchCountry(country) async {      
+  void fetchCountry(country) async {      
     final response = await http.get('https://corona.lmao.ninja/v2/countries/' + country);
     
     if (response.statusCode == 200) {
@@ -143,7 +138,7 @@ class _MapPageState extends State<MapPage>{
     }
   }
 
-  fetchAllCountries() async {      
+  void fetchAllCountries() async {      
     final response = await http.get('https://corona.lmao.ninja/v2/countries/');
     
     if (response.statusCode == 200) {
@@ -172,6 +167,7 @@ class _MapPageState extends State<MapPage>{
             pinPillPosition = 0;
             isFavorite = true;
           });
+          goToFavoriteLocation();
         }
 
         markers.add(
@@ -204,7 +200,7 @@ class _MapPageState extends State<MapPage>{
     }
   }
 
-  fetchAllStates() async {      
+  void fetchAllStates() async {      
     final response = await http.get('https://corona.lmao.ninja/v2/jhucsse/');
     
     if (response.statusCode == 200) {
@@ -232,6 +228,7 @@ class _MapPageState extends State<MapPage>{
               pinPillPosition = 0;
               isFavorite = true;
             });
+            goToFavoriteLocation();
           }
           markers.add(
             Marker(
@@ -264,7 +261,7 @@ class _MapPageState extends State<MapPage>{
     }
   }
 
-  fetchCsvFile(link, filename) async {      
+  void fetchCsvFile(link, filename) async {      
     final response = await http.get(link);
     
     if (response.statusCode == 200) {
@@ -319,6 +316,7 @@ class _MapPageState extends State<MapPage>{
               pinPillPosition = 0;
               isFavorite = true;
             });
+            goToFavoriteLocation();
           }
 
           if(int.parse(city[columnTitles.indexOf("total")]) >= _minCasesCity || _db.getString('favorite_name') == city[columnTitles.indexOf("name")]){
@@ -397,6 +395,7 @@ class _MapPageState extends State<MapPage>{
               pinPillPosition = 0;
               isFavorite = true;
             });
+            goToFavoriteLocation();
           }
 
           markers.add(
@@ -441,28 +440,30 @@ class _MapPageState extends State<MapPage>{
           places.add(i.locationName);
         }
       });
-      return places.sort((a, b) => a.toString().compareTo(b.toString()));
+      places.sort((a, b) => a.toString().compareTo(b.toString()));
+      return places;
     } else{
       return [];
     }
   }
   
-  goToLocation(search){
+  void goToLocation(search){
     Vibration.vibrate(duration: 10, amplitude: 255);
-    _locationsRegions.forEach((i){
-      if(i.locationName.toLowerCase() == search.toLowerCase()){
+    for(var i = 0; i < _locationsRegions.length; i++){
+      var item = _locationsRegions[i];
+      if(item.locationName.toLowerCase() == search.toLowerCase()){
         setState(() {
-          currentlySelectedPin = i;
+          currentlySelectedPin = item;
           pinPillPosition = 0;
-          isFavorite = _db.getString('favorite_name') == i.locationName;
+          isFavorite = _db.getString('favorite_name') == item.locationName;
         });
         if(_panelController.isPanelOpen) _panelController.close();
         _mapControllerLoaded.moveCamera(CameraUpdate.newCameraPosition(CameraPosition(
-          target: LatLng(i.lat, i.long), zoom: 10))
+          target: LatLng(item.lat, item.long), zoom: 10))
         );
-        return true;
+        break;
       }
-    });
+    }
   }
 
   @override
@@ -474,8 +475,7 @@ class _MapPageState extends State<MapPage>{
             opacity: _areMarkersLoading ? 0 : 1,
             child: GoogleMap(
               mapToolbarEnabled: false,
-              myLocationButtonEnabled: true,
-              myLocationEnabled: true,
+              myLocationEnabled: (_showLocation == PermissionStatus.granted),
               minMaxZoomPreference: new MinMaxZoomPreference(1.0, 12.0),
               initialCameraPosition: CameraPosition(
                 target: LatLng(-18.2679862, -50.6720566),

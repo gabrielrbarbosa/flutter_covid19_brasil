@@ -229,7 +229,7 @@ Widget createDetailItem({BuildContext context, String value, Color color, String
             children: <Widget>[
               Text(
                 '$value',
-                style: Theme.of(context).textTheme.headline,
+                style: Theme.of(context).textTheme.headline5,
               ),
             ],
           )
