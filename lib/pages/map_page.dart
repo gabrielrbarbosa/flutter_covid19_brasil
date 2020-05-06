@@ -27,7 +27,7 @@ class _MapPageState extends State<MapPage>{
   List<Circle> circles = <Circle>[];
   List _locationsRegions = [];
   double _currentZoom = 4, pinPillPosition = -170;
-  int _minCasesCity = 0;
+  int _minCasesCity = 0, _countBRcities = 0;
   
   PinInformation currentlySelectedPin = PinInformation(pinPath: 'assets/images/pin-country.png', report: {'cases': 0, 'deaths': 0}, locationName: '', labelColor: Colors.grey);
 
@@ -78,7 +78,10 @@ class _MapPageState extends State<MapPage>{
   void configMarkers(value){
     _db.setInt('minCasesCity', value);
     setState(() {
+      _areMarkersLoading = true;
       _minCasesCity = value;
+      _countBRcities = 0;
+      pinPillPosition = -170;
     });
 
     List<Marker> newMarkers = [];
@@ -91,8 +94,10 @@ class _MapPageState extends State<MapPage>{
       markers = newMarkers;
       circles = [];
     });
-
     fetchCsvFile('https://raw.githubusercontent.com/wcota/covid19br/master/cases-gps.csv', 'cases-gps.csv');
+
+    Vibration.vibrate(duration: 10, amplitude: 255);
+    if(_panelController.isPanelOpen) _panelController.close();
   }
 
    /// Called when the Google Map widget is created. Updates the map loading state and inits the markers.
@@ -310,16 +315,20 @@ class _MapPageState extends State<MapPage>{
           );
           _locationsRegions.add(pinInfo);
 
-          if(_db.getString('favorite_name') == city[columnTitles.indexOf("name")]){
-            setState(() {
-              currentlySelectedPin = pinInfo;
-              pinPillPosition = 0;
-              isFavorite = true;
+          if(int.parse(city[columnTitles.indexOf("total")]) >= _minCasesCity){
+            setState((){
+              _countBRcities = _countBRcities + 1;
             });
-            goToFavoriteLocation();
-          }
+            
+            if(_db.getString('favorite_name') == city[columnTitles.indexOf("name")]){
+              setState(() {
+                currentlySelectedPin = pinInfo;
+                pinPillPosition = 0;
+                isFavorite = true;
+              });
+              goToFavoriteLocation();
+            }
 
-          if(int.parse(city[columnTitles.indexOf("total")]) >= _minCasesCity || _db.getString('favorite_name') == city[columnTitles.indexOf("name")]){
             markers.add(
               Marker(
                 markerId: markerId,
@@ -441,7 +450,7 @@ class _MapPageState extends State<MapPage>{
         }
       });
       places.sort((a, b) => a.toString().compareTo(b.toString()));
-      return places;
+      return places.toSet().toList(); // Remove duplicates
     } else{
       return [];
     }
@@ -505,7 +514,7 @@ class _MapPageState extends State<MapPage>{
             borderRadius: BorderRadius.only(topLeft: Radius.circular(30.0), topRight: Radius.circular(30.0)),
             panel: Center(
               child: Details(configMarkers: configMarkers, searchLocation: searchLocation, goToLocation: goToLocation,
-                minCasesCity: _minCasesCity, report: _globalInfo, reportBR: _countryInfo),
+                minCasesCity: _minCasesCity, report: _globalInfo, reportBR: _countryInfo, countBRcities: _countBRcities),
             ),
           ),
 

@@ -3,14 +3,11 @@ import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:intl/intl.dart';
 
 class Details extends StatelessWidget {
-  final Function configMarkers;
-  final Function searchLocation;
-  final Function goToLocation;
-  final Map report;
-  final Map reportBR;
-  final int minCasesCity;
+  final Function configMarkers, searchLocation, goToLocation;
+  final Map report, reportBR;
+  final int minCasesCity, countBRcities;
 
-  Details({Key key, this.configMarkers, this.searchLocation, this.goToLocation, this.report, this.reportBR, this.minCasesCity}) : super(key: key);
+  Details({Key key, this.configMarkers, this.searchLocation, this.goToLocation, this.countBRcities, this.report, this.reportBR, this.minCasesCity}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +23,7 @@ class Details extends StatelessWidget {
                 Expanded( // wrap your Column in Expanded
                   child: Column(
                   children: <Widget>[
-                    SizedBox(height: 20,),
+                    SizedBox(height: 10,),
                     TypeAheadFormField(
                     textFieldConfiguration: TextFieldConfiguration(
                       autofocus: false,
@@ -71,7 +68,7 @@ class Details extends StatelessWidget {
             children:<Widget>[
               Padding(
                 padding: const EdgeInsets.only(top: 5.0, left: 16.0),
-                child: Text('Mostrar Cidades com: '),
+                child: Text(countBRcities.toString() + ' municípios brasileiros no mapa. Filtrar por: '),
               )
             ]
           ),
