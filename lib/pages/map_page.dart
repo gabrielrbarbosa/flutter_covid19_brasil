@@ -441,7 +441,7 @@ class _MapPageState extends State<MapPage>{
           places.add(i.locationName);
         }
       });
-      return places;
+      return places.sort((a, b) => a.toString().compareTo(b.toString()));
     } else{
       return [];
     }
@@ -474,6 +474,8 @@ class _MapPageState extends State<MapPage>{
             opacity: _areMarkersLoading ? 0 : 1,
             child: GoogleMap(
               mapToolbarEnabled: false,
+              myLocationButtonEnabled: true,
+              myLocationEnabled: true,
               minMaxZoomPreference: new MinMaxZoomPreference(1.0, 12.0),
               initialCameraPosition: CameraPosition(
                 target: LatLng(-18.2679862, -50.6720566),
