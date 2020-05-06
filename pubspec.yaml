@@ -1,7 +1,7 @@
 name: covid_19_brasil
 description: Mapa para análise de casos do Coronavírus no Brasil
 
-version: 1.5.4
+version: 1.5.5
 
 environment:
   sdk: ">=2.3.0 <3.0.0"
@@ -30,6 +30,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: "^0.7.5"
 
 flutter_icons:
   image_path: "icon/icon2.png" 

@@ -23,15 +23,31 @@ class CustomCircleSymbolRenderer extends charts.CircleSymbolRenderer {
   @override
   void paint(charts.ChartCanvas canvas, Rectangle bounds, {List dashPattern, Color fillColor, FillPatternType fillPattern, Color strokeColor, double strokeWidthPx}) {
     super.paint(canvas, bounds, dashPattern: dashPattern, fillColor: fillColor, strokeColor: strokeColor, strokeWidthPx: strokeWidthPx);
+
+    final num bubbleHeight = 30.0;
+    final num bubbleWidth = ToolTipMgr.title.length * 9;
+    final num bubbleBoundLeft = (bounds.left - bubbleWidth / 3) - 5;
+    final num bubbleBoundTop = bounds.top - bubbleHeight;
+
+    canvas.drawRRect(
+      Rectangle(bubbleBoundLeft, bubbleBoundTop, bubbleWidth, bubbleHeight),
+      fill: charts.Color.white,
+      stroke: charts.Color.white,
+      radius: 5.0,
+      roundTopLeft: true,
+      roundBottomLeft: true,
+      roundBottomRight: true,
+      roundTopRight: true,
+    );
     
     var textStyle = style.TextStyle();
     textStyle.color = Color.black;
-    textStyle.fontSize = 15;
+    textStyle.fontSize = 13;
 
     canvas.drawText(
       txt.TextElement(ToolTipMgr.title, style: textStyle),
-      (bounds.left - 16).round(),
-      (bounds.top - 25).round()
+      (bounds.left - bubbleWidth/3).round(),
+      (bounds.top - 20).round()
     );
   }
 }

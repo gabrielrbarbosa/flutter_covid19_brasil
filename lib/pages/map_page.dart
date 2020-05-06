@@ -12,6 +12,8 @@ import 'package:covid_19_brasil/model/details_panel.dart';
 import 'package:covid_19_brasil/model/pin_information.dart';
 import 'package:vibration/vibration.dart';
 
+import '../model/pin_information.dart';
+
 class MapPage extends StatefulWidget {
   @override
   _MapPageState createState() => _MapPageState();
@@ -19,17 +21,19 @@ class MapPage extends StatefulWidget {
 
 class _MapPageState extends State<MapPage>{
   final Completer<GoogleMapController> _mapController = Completer();
+  GoogleMapController _mapControllerLoaded;
 
   /// Set of displayed markers on the map
   List<Marker> markers = <Marker>[];
   List<Circle> circles = <Circle>[];
+  List _locationsRegions = [];
   double _currentZoom = 4, pinPillPosition = -170;
   int _minCasesCity = 0;
   
-  bool isFavorite = false;
   PinInformation currentlySelectedPin = PinInformation(pinPath: 'assets/images/pin-country.png', report: {'cases': 0, 'deaths': 0}, locationName: '', labelColor: Colors.grey);
 
-  bool _areMarkersLoading = true;
+  bool _areMarkersLoading = true, isFavorite = true;
+  PanelController _panelController = new PanelController();
   BitmapDescriptor bitmapIconCity, bitmapIconState, bitmapIconCountry;
   String errorMsg, _mapStyle;
   SharedPreferences _db;
@@ -93,6 +97,7 @@ class _MapPageState extends State<MapPage>{
   void _onMapCreated(GoogleMapController controller) async {
     _mapController.complete(controller);
     controller.setMapStyle(_mapStyle);
+    _mapControllerLoaded = controller;
     
     fetchCsvFile('https://raw.githubusercontent.com/wcota/covid19br/master/cases-gps.csv', 'cases-gps.csv');
     fetchCsvFile('https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-total.csv', 'cases-brazil-total.csv');
@@ -159,6 +164,7 @@ class _MapPageState extends State<MapPage>{
           },
           labelColor: Colors.blue[700]
         );
+        _locationsRegions.add(pinInfo);
 
         if(_db.getString('favorite_name') == country['country'].toString()){
           setState(() {
@@ -184,10 +190,12 @@ class _MapPageState extends State<MapPage>{
           )
         );
       }
-      setState(() {
-        markers =  markers;
-        _areMarkersLoading = false;
-      });
+      if(mounted){
+        setState(() {
+          markers = markers;
+          _areMarkersLoading = false;
+        });
+      }
     } else {
       setState(() {
         errorMsg = 'Erro (' + response.statusCode.toString() + '): ' + response.body;
@@ -216,6 +224,7 @@ class _MapPageState extends State<MapPage>{
             report: {'cases': formatted(country['stats']['confirmed'].toString()), 'deaths': infoDeaths, 'recovered': formatted(country['stats']['recovered'].toString())},
             labelColor: Colors.green[400]
           );
+          _locationsRegions.add(pinInfo);
 
           if(_db.getString('favorite_name') == country['province'].toString()){
             setState(() {
@@ -241,10 +250,12 @@ class _MapPageState extends State<MapPage>{
           );
         }
       }
-      setState(() {
-        markers =  markers;
-        _areMarkersLoading = false;
-      });
+      if(mounted){
+        setState(() {
+          markers =  markers;
+          _areMarkersLoading = false;
+        });
+      }
     } else {
       setState(() {
         errorMsg = 'Erro (' + response.statusCode.toString() + '): ' + response.body;
@@ -300,6 +311,7 @@ class _MapPageState extends State<MapPage>{
             },
             labelColor: Colors.red
           );
+          _locationsRegions.add(pinInfo);
 
           if(_db.getString('favorite_name') == city[columnTitles.indexOf("name")]){
             setState(() {
@@ -377,6 +389,7 @@ class _MapPageState extends State<MapPage>{
             },
             labelColor: Colors.green[400]
           );
+          _locationsRegions.add(pinInfo);
 
           if(_db.getString('favorite_name') == states[st[columnTitles.indexOf("state")]].name){
             setState(() {
@@ -406,16 +419,50 @@ class _MapPageState extends State<MapPage>{
         return true;
       });
     }
-    setState(() {
-      markers =  markers;
-      _areMarkersLoading = false;
-    });
+    if(mounted){
+      setState(() {
+        markers =  markers;
+        _areMarkersLoading = false;
+      });
+    }
   }
 
   String formatted(String str){
     if(str == '') return "";
     int val = int.parse(str);
     return new NumberFormat.decimalPattern('pt').format(val).toString();
+  }
+
+  searchLocation(pattern) async{
+    List<String> places = [];
+    if(pattern.length > 0){
+      _locationsRegions.forEach((i){
+        if(i.locationName.toLowerCase().contains(pattern.toLowerCase())){
+          places.add(i.locationName);
+        }
+      });
+      return places;
+    } else{
+      return [];
+    }
+  }
+  
+  goToLocation(search){
+    Vibration.vibrate(duration: 10, amplitude: 255);
+    _locationsRegions.forEach((i){
+      if(i.locationName.toLowerCase() == search.toLowerCase()){
+        setState(() {
+          currentlySelectedPin = i;
+          pinPillPosition = 0;
+          isFavorite = _db.getString('favorite_name') == i.locationName;
+        });
+        if(_panelController.isPanelOpen) _panelController.close();
+        _mapControllerLoaded.moveCamera(CameraUpdate.newCameraPosition(CameraPosition(
+          target: LatLng(i.lat, i.long), zoom: 10))
+        );
+        return true;
+      }
+    });
   }
 
   @override
@@ -445,16 +492,18 @@ class _MapPageState extends State<MapPage>{
           ),
           
           SlidingUpPanel(
+            controller: _panelController,
             backdropOpacity: 0.1,
             color: Colors.grey[100],
             backdropTapClosesPanel: true,
             backdropEnabled: true,
-            header: Container(width: MediaQuery.of(context).size.width,height: 10, padding: new EdgeInsets.all(4.0),child: Align(alignment: Alignment.topCenter, child: Icon(Icons.arrow_upward, size: 18, color: Colors.blue))),
-            minHeight: 90,
-            maxHeight: 570,
+            header: Container(width: MediaQuery.of(context).size.width,height: 20, padding: new EdgeInsets.all(4.0),child: Align(alignment: Alignment.topCenter, child: Icon(Icons.arrow_upward, size: 25, color: Colors.blue))),
+            minHeight: 40,
+            maxHeight: 580,
             borderRadius: BorderRadius.only(topLeft: Radius.circular(30.0), topRight: Radius.circular(30.0)),
             panel: Center(
-              child: Details(configMarkers: configMarkers, minCasesCity: _minCasesCity, report: _globalInfo, reportBR: _countryInfo),
+              child: Details(configMarkers: configMarkers, searchLocation: searchLocation, goToLocation: goToLocation,
+                minCasesCity: _minCasesCity, report: _globalInfo, reportBR: _countryInfo),
             ),
           ),
 

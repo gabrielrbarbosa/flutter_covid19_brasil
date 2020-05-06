@@ -39,7 +39,7 @@ class _HomePageState extends State<HomePage> {
 
   void initState(){
     super.initState();
-    StatusBar.color(Colors.blue[400]);
+    StatusBar.color(Colors.blue);
     _initPackageInfo();
   }
 

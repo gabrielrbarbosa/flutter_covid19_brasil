@@ -91,16 +91,20 @@ class _ChartsPageState extends State<ChartsPage> {
   void _createChart(txt, filename) async{ 
     if(filename == "cases-brazil-cities-time.csv"){
       List cities = initCities(txt.split('\n'));
-      setState(() {
-        _locationsCities = cities;
-      });
+      if(mounted){
+        setState(() {
+          _locationsCities = cities;
+        });
+      }
     } 
     else if(filename == "cases-brazil-states.csv"){
       List states = initStates(txt.split('\n'));
-      setState(() {
-        _locationsStates = states;
-      });
-      updateChartInfo();
+      if(mounted){
+        setState(() {
+          _locationsStates = states;
+        });
+        updateChartInfo();
+      }
     }
     changeChart(chartIndex);
   }

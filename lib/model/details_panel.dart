@@ -1,23 +1,80 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:intl/intl.dart';
 
 class Details extends StatelessWidget {
   final Function configMarkers;
+  final Function searchLocation;
+  final Function goToLocation;
   final Map report;
   final Map reportBR;
   final int minCasesCity;
 
-  Details({Key key, this.configMarkers, this.report, this.reportBR, this.minCasesCity}) : super(key: key);
+  Details({Key key, this.configMarkers, this.searchLocation, this.goToLocation, this.report, this.reportBR, this.minCasesCity}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
       child: Column(
         children: <Widget>[
-          SizedBox(
-            height: 30.0,
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              mainAxisSize: MainAxisSize.max,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: <Widget>[ 
+                Expanded( // wrap your Column in Expanded
+                  child: Column(
+                  children: <Widget>[
+                    SizedBox(height: 20,),
+                    TypeAheadFormField(
+                    textFieldConfiguration: TextFieldConfiguration(
+                      autofocus: false,
+                      style: DefaultTextStyle.of(context).style.copyWith(
+                        fontStyle: FontStyle.normal
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Pesquisar (País, Estado ou Cidade):'
+                      )
+                    ),
+                    suggestionsCallback: (pattern) async {
+                      return await this.searchLocation(pattern);
+                    },
+                    itemBuilder: (context, suggestion) {
+                      return ListTile(
+                        leading: Icon(Icons.location_on),
+                        title: Text(suggestion)
+                      );
+                    },
+                    onSuggestionSelected: (suggestion) {
+                      this.goToLocation(suggestion);
+                    },
+                    hideOnError: true,
+                    hideSuggestionsOnKeyboardHide: true,
+                    noItemsFoundBuilder: (BuildContext context){
+                      return Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          'Nenhuma localidade encontrada',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              color: Theme.of(context).disabledColor, fontSize: 18.0),
+                        ),
+                      );
+                    },
+                  )
+                ],
+            ))]),
           ),
-          Text('Mostrar Cidades com: '),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children:<Widget>[
+              Padding(
+                padding: const EdgeInsets.only(top: 5.0, left: 16.0),
+                child: Text('Mostrar Cidades com: '),
+              )
+            ]
+          ),
           Row(
             mainAxisAlignment: MainAxisAlignment.start,
             children: <Widget>[
@@ -56,7 +113,15 @@ class Details extends StatelessWidget {
               ),
             ]
           ),
-
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children:<Widget>[
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text('Informações - Brasil'),
+              ),
+            ]
+          ),
           Container(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -79,13 +144,19 @@ class Details extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                createDetailItem(context: context, value: formatted(reportBR['tests']), text: "Testes Realizados"),
-                createDetailItem(context: context, value: reportBR['fatality'].toString() + "%", text: "Letalidade Atual"),
+                //createDetailItem(context: context, value: formatted(reportBR['tests']), text: "Testes Realizados"),
+                //createDetailItem(context: context, value: reportBR['fatality'].toString() + "%", text: "Letalidade Atual"),
               ],
             ),
           ),
-          SizedBox(
-            height: 10.0,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children:<Widget>[
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text('Informações - Global'),
+              ),
+            ]
           ),
           Container(
             child: Row(
@@ -109,8 +180,8 @@ class Details extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                createDetailItem(context: context, value: formatted(report['tests']), text: "Testes Realizados"),
-                createDetailItem(context: context, value: report['fatality'].toString() + "%", text: "Letalidade Atual"),
+                //createDetailItem(context: context, value: formatted(report['tests']), text: "Testes Realizados"),
+                //createDetailItem(context: context, value: report['fatality'].toString() + "%", text: "Letalidade Atual"),
               ],
             ),
           ),
@@ -158,7 +229,7 @@ Widget createDetailItem({BuildContext context, String value, Color color, String
             children: <Widget>[
               Text(
                 '$value',
-                style: Theme.of(context).textTheme.headline5,
+                style: Theme.of(context).textTheme.headline,
               ),
             ],
           )
