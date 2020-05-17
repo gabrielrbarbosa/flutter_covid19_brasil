@@ -14,18 +14,18 @@ dependencies:
   date_format: ^1.0.8
   feature_discovery: ^0.8.0
   firebase_analytics: ^5.0.11
-  flutter_typeahead: ^1.8.0
-  flutter_cache_manager: ^1.1.1
-  google_maps_flutter: ^0.5.26
+  flutter_typeahead: ^1.8.1
+  flutter_cache_manager: ^1.2.2
+  google_maps_flutter: ^0.5.27+3
   like_button: ^0.2.0
-  package_info: ^0.4.0+16
+  package_info: ^0.4.0+18
   permission_handler: ^5.0.0+hotfix.5
   sliding_up_panel: ^1.0.2
-  shared_preferences: ^0.5.7
+  shared_preferences: ^0.5.7+2
   splashscreen: ^1.2.0
   statusbar: ^1.1.0
   vibration: ^1.2.4
-  webview_flutter: ^0.3.19+9
+  webview_flutter: ^0.3.21
 
 dev_dependencies:
   flutter_test:
@@ -39,8 +39,5 @@ flutter_icons:
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/pin-city.png
-    - assets/images/pin-state.png
-    - assets/images/pin-country.png
-    - assets/images/img_menu.png
+    - assets/images/
     - assets/map-style.txt

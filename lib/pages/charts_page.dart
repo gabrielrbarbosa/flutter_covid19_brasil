@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:covid_19_brasil/model/line_chart.dart';
-import 'package:covid_19_brasil/states.dart';
+import 'package:covid_19_brasil/widgets/line_chart.dart';
+import 'package:covid_19_brasil/model/states.dart';
 import 'package:vibration/vibration.dart';
 
 class ChartsPage extends StatefulWidget {

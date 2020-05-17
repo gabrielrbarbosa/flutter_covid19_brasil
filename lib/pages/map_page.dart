@@ -8,9 +8,9 @@ import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
-import 'package:covid_19_brasil/states.dart';
-import 'package:covid_19_brasil/model/details_panel.dart';
-import 'package:covid_19_brasil/model/pin_information.dart';
+import 'package:covid_19_brasil/model/states.dart';
+import 'package:covid_19_brasil/widgets/details_panel.dart';
+import 'package:covid_19_brasil/widgets/pin_information.dart';
 import 'package:vibration/vibration.dart';
 
 class MapPage extends StatefulWidget {
@@ -68,11 +68,11 @@ class _MapPageState extends State<MapPage>{
   }
   
   void goToFavoriteLocation(){
-    if(_db.getString('favorite_name') != '' && _db.getDouble('favorite_latitude') != null){
+    /*if(_db.getString('favorite_name') != '' && _db.getDouble('favorite_latitude') != null){
       _mapControllerLoaded.moveCamera(CameraUpdate.newCameraPosition(CameraPosition(
         target: LatLng(_db.getDouble('favorite_latitude'), _db.getDouble('favorite_longitude')), zoom: 10))
       );
-    }
+    }*/
   }
 
   void configMarkers(value){
@@ -160,7 +160,7 @@ class _MapPageState extends State<MapPage>{
           long: double.parse(country['countryInfo']['long'].toString()),
           pinPath: "assets/images/pin-country.png",
           report: {'cases': formatted(country['cases'].toString()), 'deaths': infoDeaths, 'recovered': formatted(country['recovered'].toString()), 
-            'cases_per1M': formatted(country['casesPerOneMillion'].toString()), 'deaths_per1M': formatted(country['deathsPerOneMillion'].toString())
+            'cases_per1M': country['casesPerOneMillion'].toString(), 'deaths_per1M': country['deathsPerOneMillion'].toString()
           },
           labelColor: Colors.blue[700]
         );
@@ -211,7 +211,7 @@ class _MapPageState extends State<MapPage>{
     if (response.statusCode == 200) {
       var jsonResponse = json.decode(response.body);
       for(var country in jsonResponse){
-        if(country['province'] != 'null' && country['coordinates']['latitude'] != ''){
+        if(country['province'] != null && country['coordinates']['latitude'] != ''){
           LatLng location = LatLng(double.parse(country['coordinates']['latitude']), double.parse(country['coordinates']['longitude']));
           String fatality = ((country['stats']['deaths'] / country['stats']['confirmed']) * 100).toStringAsFixed(2);
           String infoDeaths = formatted(country['stats']['deaths'].toString()) + ' (' + fatality + '%)';

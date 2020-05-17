@@ -3,6 +3,7 @@ import 'package:splashscreen/splashscreen.dart';
 import 'package:covid_19_brasil/pages/home_page.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(MainPage());
 }
 

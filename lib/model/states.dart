@@ -1,4 +1,4 @@
-import 'package:covid_19_brasil/state.class.dart';
+import 'package:covid_19_brasil/model/state.class.dart';
 
 Map<String, State> states = {
   "AC": new State("Acre", "AC", -8.77,-70.55),
