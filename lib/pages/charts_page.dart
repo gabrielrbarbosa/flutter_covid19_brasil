@@ -1,5 +1,5 @@
 import 'package:charts_flutter/flutter.dart' as charts;
-import 'package:date_format/date_format.dart';
+import 'package:date_format/date_format.dart' as dt;
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:http/http.dart' as http;
@@ -16,12 +16,17 @@ class ChartsPage extends StatefulWidget {
 class _ChartsPageState extends State<ChartsPage> {
   String chartIndex = 'Total';
   bool showChart = false, showBarChart = false;
+  DateTime initialInfectionDayBR = DateTime(2020, 02, 25);
+  DateTime initialDate = DateTime.now().subtract(new Duration(days: 60));
+  DateTime finalDate = DateTime.now();
+  DateTime selectedInitialDate = DateTime.now().subtract(new Duration(days: 60));
+  DateTime selectedFinalDate = DateTime.now();
 
   List<TimeSeriesCovid> lineTotalCases = [], lineNewCases = [], lineTotalDeaths = [], lineNewDeaths = [], lineRecovered = [];
   List<TimeSeriesCovidDouble> lineFatality = [];
   List<charts.Series<dynamic, DateTime>> lineChart = [];
 
-  String _selectedType = 'Brasil', _selectedRegion = 'TOTAL', _selectedLabel = '', _pointSelected, _daySelected, errorMsg;
+  String _selectedType = 'Brasil', _selectedRegion = 'TOTAL', _selectedLabel = '', _pointSelected, errorMsg;
   List<String> _locations = ['Brasil', 'Estados', 'Cidades'], _locationsStates = [], _locationsRegions = [], _locationsCities = [], _locationsCitiesLoad = [];
   List fileDataCities, fileDataStates;
   DateTime _timeSelected;
@@ -149,7 +154,11 @@ class _ChartsPageState extends State<ChartsPage> {
 
         var info = strRow.split(",");
         if(count > 1){
-          if(info[index] == _selectedRegion){
+          var infoDate = DateTime.parse(info[columnTitles.indexOf('date')]);
+
+          if((info[index] == _selectedRegion) && 
+              ((infoDate.isAfter(selectedInitialDate) && infoDate.isBefore(selectedFinalDate)) || 
+              (infoDate.isAtSameMomentAs(selectedInitialDate) || infoDate.isAtSameMomentAs(selectedFinalDate)))){
             double fatalRatio = 0;
             if(int.parse(info[columnTitles.indexOf('deaths')]) > 0){
               fatalRatio = (int.parse(info[columnTitles.indexOf('deaths')]) / int.parse(info[columnTitles.indexOf('totalCases')]) * 100);
@@ -208,17 +217,14 @@ class _ChartsPageState extends State<ChartsPage> {
       });
       Vibration.vibrate(duration: 10, amplitude: 255);
 
-      int daysDiff = time.difference(selectedDatum[0].series.data[0].time).inDays + 1;
-
       setState(() {
         _timeSelected = time;
         _pointSelected = selected;
-        _daySelected = daysDiff.toString();
       });
 
       ToolTipMgr.setTitle({
         'title': selected,
-        'subTitle': formatDate(_timeSelected, [dd, '/', mm, '/', yyyy])
+        'subTitle': dt.formatDate(_timeSelected, [dt.dd, '/', dt.mm, '/', dt.yyyy])
       });
     }
   }
@@ -350,6 +356,56 @@ class _ChartsPageState extends State<ChartsPage> {
                       );
                     }).toList(),
                   ),
+                  RaisedButton(
+                    color: Colors.blue,
+                    child: Row( // Replace with a Row for horizontal icon + text
+                      children: <Widget>[
+                        Icon(Icons.date_range, color: Colors.white,),
+                        Padding(
+                          padding: const EdgeInsets.only(left:8.0),
+                          child: Text("Inicial", style: TextStyle(color: Colors.white)),
+                        )
+                      ],
+                    ),
+                    onPressed: (){
+                      showDatePicker(context: context, currentDate: DateTime.now(), initialDatePickerMode: DatePickerMode.day,
+                        initialDate: selectedInitialDate, firstDate: initialInfectionDayBR, lastDate: selectedFinalDate, 
+                        cancelText: "Cancelar", confirmText: "Confirmar").then((value){
+                          if(value != selectedInitialDate && value != null){
+                            setState(() {
+                              selectedInitialDate = value;
+                            });
+                            updateChartInfo();
+                            changeChart(chartIndex);
+                          }
+                        });
+                    }
+                  ),
+                  RaisedButton(
+                    color: Colors.blue,
+                    child: Row( // Replace with a Row for horizontal icon + text
+                      children: <Widget>[
+                        Icon(Icons.date_range, color: Colors.white,),
+                        Padding(
+                          padding: const EdgeInsets.only(left:8.0),
+                          child: Text("Final", style: TextStyle(color: Colors.white)),
+                        )
+                      ],
+                    ),
+                    onPressed: (){
+                     showDatePicker(context: context, currentDate: DateTime.now(), initialDatePickerMode: DatePickerMode.day,
+                        initialDate: selectedFinalDate, firstDate: selectedInitialDate, lastDate: DateTime.now(), 
+                        cancelText: "Cancelar", confirmText: "Confirmar").then((value){
+                          if(value != selectedFinalDate && value != null){
+                            setState(() {
+                              selectedFinalDate = value;  
+                            });
+                            updateChartInfo();
+                            changeChart(chartIndex);
+                          }
+                        });
+                    }
+                  ),
               ])
             ),
                 
@@ -439,6 +495,18 @@ class _ChartsPageState extends State<ChartsPage> {
             )
           ),
 
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical:12.0),
+            child: Row(
+                mainAxisSize: MainAxisSize.max,
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: <Widget>[ 
+                  Text('Intervalo: ' + dt.formatDate(selectedInitialDate, [dt.dd, '/', dt.mm, '/', dt.yyyy]) +
+                      ' até '+ dt.formatDate(selectedFinalDate, [dt.dd, '/', dt.mm, '/', dt.yyyy]))
+                ]
+            ),
+          ),
+
           if(errorMsg != null)
           (AlertDialog(
             title: Text('Aviso'),
@@ -490,8 +558,7 @@ class _ChartsPageState extends State<ChartsPage> {
                   padding: new EdgeInsets.all(16.0),
                   child: Text(
                     _timeSelected != null ? 
-                    _pointSelected + " " + chartIndex + " em " + formatDate(_timeSelected, [dd, '/', mm, '/', yyyy]) + 
-                      ' (' + _daySelected + 'º dia)' :
+                    _pointSelected + " " + chartIndex + " em " + dt.formatDate(_timeSelected, [dt.dd, '/', dt.mm, '/', dt.yyyy]) :
                     "Toque nos pontos para + info",
                     textAlign: TextAlign.center,
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),

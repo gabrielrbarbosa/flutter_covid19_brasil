@@ -211,7 +211,7 @@ class _MapPageState extends State<MapPage>{
     if (response.statusCode == 200) {
       var jsonResponse = json.decode(response.body);
       for(var country in jsonResponse){
-        if(country['province'] != null && country['coordinates']['latitude'] != ''){
+        if(country['province'] != null && country['country'] != 'Brazil' && country['coordinates']['latitude'] != ''){
           LatLng location = LatLng(double.parse(country['coordinates']['latitude']), double.parse(country['coordinates']['longitude']));
           String fatality = ((country['stats']['deaths'] / country['stats']['confirmed']) * 100).toStringAsFixed(2);
           String infoDeaths = formatted(country['stats']['deaths'].toString()) + ' (' + fatality + '%)';
