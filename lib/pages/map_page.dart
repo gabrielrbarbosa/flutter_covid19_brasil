@@ -27,7 +27,7 @@ class _MapPageState extends State<MapPage>{
   List<Circle> circles = <Circle>[];
   List _locationsRegions = [];
   double _currentZoom = 4, pinPillPosition = -170;
-  int _minCasesCity = 0, _countBRcities = 0;
+  int _minCasesCity = 1000, _countBRcities = 0;
   
   PinInformation currentlySelectedPin = PinInformation(pinPath: 'assets/images/pin-country.png', report: {'cases': 0, 'deaths': 0}, locationName: '', labelColor: Colors.grey);
 

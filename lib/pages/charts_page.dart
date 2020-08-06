@@ -17,9 +17,9 @@ class _ChartsPageState extends State<ChartsPage> {
   String chartIndex = 'Total';
   bool showChart = false, showBarChart = false;
   DateTime initialInfectionDayBR = DateTime(2020, 02, 25);
-  DateTime initialDate = DateTime.now().subtract(new Duration(days: 60));
+  DateTime initialDate = DateTime.now().subtract(new Duration(days: 30));
   DateTime finalDate = DateTime.now();
-  DateTime selectedInitialDate = DateTime.now().subtract(new Duration(days: 60));
+  DateTime selectedInitialDate = DateTime.now().subtract(new Duration(days: 30));
   DateTime selectedFinalDate = DateTime.now();
 
   List<TimeSeriesCovid> lineTotalCases = [], lineNewCases = [], lineTotalDeaths = [], lineNewDeaths = [], lineRecovered = [];

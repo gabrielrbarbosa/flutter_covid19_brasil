@@ -1,7 +1,7 @@
 name: covid_19_brasil
 description: Mapa para análise de casos do Coronavírus no Brasil
 
-version: 1.5.5
+version: 1.6.0
 
 environment:
   sdk: ">=2.3.0 <3.0.0"
@@ -12,19 +12,19 @@ dependencies:
 
   charts_flutter: ^0.9.0
   date_format: ^1.0.8
-  feature_discovery: ^0.10.0
-  firebase_analytics: ^5.0.11
-  flutter_typeahead: ^1.8.1
-  flutter_cache_manager: ^1.2.2
-  google_maps_flutter: ^0.5.28+1
-  like_button: ^0.2.0
-  package_info: ^0.4.0+18
-  permission_handler: ^5.0.0+hotfix.5
+  feature_discovery: ^0.12.0+2
+  firebase_analytics: ^5.0.16
+  flutter_typeahead: ^1.8.7
+  flutter_cache_manager: ^1.4.1
+  google_maps_flutter: ^0.5.29
+  like_button: ^1.0.1
+  package_info: ^0.4.1
+  permission_handler: ^5.0.1+1
   sliding_up_panel: ^1.0.2
-  shared_preferences: ^0.5.7+3
+  shared_preferences: ^0.5.8
   splashscreen: ^1.2.0
   statusbar: ^1.1.0
-  vibration: ^1.2.4
+  vibration: ^1.4.0
   webview_flutter: ^0.3.22+1
 
 dev_dependencies:
