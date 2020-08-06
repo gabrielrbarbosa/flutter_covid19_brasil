@@ -27,8 +27,8 @@ class _ChartsPageState extends State<ChartsPage> {
   List<charts.Series<dynamic, DateTime>> lineChart = [];
 
   String _selectedType = 'Brasil', _selectedRegion = 'TOTAL', _selectedLabel = '', _pointSelected, errorMsg;
-  List<String> _locations = ['Brasil', 'Estados', 'Cidades'], _locationsStates = [], _locationsRegions = [], _locationsCities = [], _locationsCitiesLoad = [];
-  List fileDataCities, fileDataStates;
+  List<String> _locations = ['Brasil', 'Estados'], _locationsStates = [], _locationsRegions = [];
+  List fileDataStates;
   DateTime _timeSelected;
   var lineChartWidget;
 
@@ -39,7 +39,8 @@ class _ChartsPageState extends State<ChartsPage> {
 
   void downloadFiles() async{
     fetchCsvFile('https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-states.csv', 'cases-brazil-states.csv');
-    fetchCsvFile('https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-cities-time_changesOnly.csv', 'cases-brazil-cities-time.csv');
+    // Cities file is too big and taking too long to load
+    // fetchCsvFile('https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-cities-time_changesOnly.csv', 'cases-brazil-cities-time.csv');
   }
 
   fetchCsvFile(link, filename) async {      
@@ -56,34 +57,6 @@ class _ChartsPageState extends State<ChartsPage> {
     }
   }
 
-  List initCities(txt){
-    fileDataCities = txt;
-    List columnTitles = fileDataCities[0].split(",");
-    int count = 1;
-
-    fileDataCities.forEach((strRow){
-      if(strRow == "") return false;
-
-      // Get all locations and store in dropdown list
-      if(count > 1){
-        var info = strRow.split(",");
-
-        if(!info[columnTitles.indexOf("city")].contains("SEM LOCALIZAÇÃO DEFINIDA")){
-          if(!_locationsCitiesLoad.contains(info[columnTitles.indexOf("city")])){
-            _locationsCitiesLoad.add(info[columnTitles.indexOf("city")]);
-          } else if(_locationsCitiesLoad.contains(info[columnTitles.indexOf("city")]) && !_locationsCities.contains(info[columnTitles.indexOf("city")])){
-            _locationsCities.add(info[columnTitles.indexOf("city")]);
-          }
-        }
-      }
-      count++;
-      return true;
-    });
-
-    _locationsCities.sort((a, b) => a.toString().compareTo(b.toString()));
-    return _locationsCities;
-  }
-
   List initStates(txt){
     fileDataStates = txt;
     states.forEach((uf, state){
@@ -94,22 +67,12 @@ class _ChartsPageState extends State<ChartsPage> {
   }
 
   void _createChart(txt, filename) async{ 
-    if(filename == "cases-brazil-cities-time.csv"){
-      List cities = initCities(txt.split('\n'));
-      if(mounted){
-        setState(() {
-          _locationsCities = cities;
-        });
-      }
-    } 
-    else if(filename == "cases-brazil-states.csv"){
-      List states = initStates(txt.split('\n'));
-      if(mounted){
-        setState(() {
-          _locationsStates = states;
-        });
-        updateChartInfo();
-      }
+    List states = initStates(txt.split('\n'));
+    if(mounted){
+      setState(() {
+        _locationsStates = states;
+      });
+      updateChartInfo();
     }
     changeChart(chartIndex);
   }
@@ -119,7 +82,6 @@ class _ChartsPageState extends State<ChartsPage> {
     List<TimeSeriesCovid> totalCases = [], newCases = [], totalDeaths = [], newDeaths = [], recoveredCases = [];
     List<TimeSeriesCovidDouble> fatality = [];
     List fileData, columnTitles;
-    bool isCity = false;
 
     switch(_selectedType){
       case 'Brasil':
@@ -132,19 +94,10 @@ class _ChartsPageState extends State<ChartsPage> {
           _selectedRegion = _selectedRegion.split('-')[1].trim();
         }
       break;
-      case 'Cidades':
-        fileData = fileDataCities;
-        _selectedLabel = _selectedRegion;
-        isCity = true;
-      break;
     }
 
     columnTitles = fileData[0].split(",");
-    if(isCity){
-      index = columnTitles.indexOf("city");
-    } else{
-      index = columnTitles.indexOf("state");
-    }
+    index = columnTitles.indexOf("state");
     
     if(_selectedRegion != ''){
       fileData.forEach((strRow){
@@ -204,7 +157,6 @@ class _ChartsPageState extends State<ChartsPage> {
     final selectedDatum = model.selectedDatum;
     DateTime time;
     String selected;
-    
 
     if (selectedDatum.isNotEmpty) {
       time = selectedDatum.first.datum.time;
@@ -343,8 +295,7 @@ class _ChartsPageState extends State<ChartsPage> {
                           _selectedType = newValue;
                           _selectedRegion = '';
                           _selectedLabel = '';
-                          if(newValue == 'Estados') _locationsRegions = _locationsStates;
-                          else if(newValue == 'Cidades') _locationsRegions = _locationsCities;
+                          _locationsRegions = _locationsStates;
                           lineChartWidget = Text('Pesquise uma região para mais detalhes', textAlign: TextAlign.center);
                         });
                       }

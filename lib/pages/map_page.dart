@@ -348,9 +348,11 @@ class _MapPageState extends State<MapPage>{
 
           if(int.parse(city[columnTitles.indexOf("total")]) >= 100 && int.parse(city[columnTitles.indexOf("total")]) >= _minCasesCity){
             double radius = double.parse(city[columnTitles.indexOf("total")].toString()) * 4;
-            if(radius > 10000) radius = double.parse(city[columnTitles.indexOf("total")].toString()) * 2;
+            if(radius > 40000) radius = 40000;
             else if(radius > 20000) radius = double.parse(city[columnTitles.indexOf("total")].toString());
-            else if(radius > 50000) radius = 50000;
+            else if(radius > 10000) radius = double.parse(city[columnTitles.indexOf("total")].toString()) * 2;
+            
+             radius = double.parse(city[columnTitles.indexOf("total")].toString());
 
             circles.add(Circle(
               circleId: CircleId('circle-' + city[columnTitles.indexOf("name")]),
