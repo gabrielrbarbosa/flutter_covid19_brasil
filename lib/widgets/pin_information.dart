@@ -160,6 +160,7 @@ class MapPinPillComponentState extends State<MapPinPillComponent> {
                         if(widget.currentlySelectedPin.report['cases_per100k'] != null) Text('Casos por 100 mil: ${widget.currentlySelectedPin.report['cases_per100k'].toString()}', style: rowStyle),
                         if(widget.currentlySelectedPin.report['deaths_per1M'] != null) Text('Mortes por 1 milhão: ${widget.currentlySelectedPin.report['deaths_per1M'].toString()}', style: rowStyle),
                         if(widget.currentlySelectedPin.report['deaths_per100k'] != null) Text('Mortes por 100 mil: ${widget.currentlySelectedPin.report['deaths_per100k'].toString()}', style: rowStyle),
+                        if(widget.currentlySelectedPin.report['vaccinated'] != null) Text('Vacinados: ${widget.currentlySelectedPin.report['vaccinated'].toString()}', style: rowStyle),
                       ],
                     ),
                   ),

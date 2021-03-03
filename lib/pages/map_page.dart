@@ -24,10 +24,10 @@ class _MapPageState extends State<MapPage>{
 
   /// Set of displayed markers on the map
   List<Marker> markers = <Marker>[];
-  List<Circle> circles = <Circle>[];
+  //List<Circle> circles = <Circle>[];
   List _locationsRegions = [];
   double _currentZoom = 4, pinPillPosition = -170;
-  int _minCasesCity = 1000, _countBRcities = 0;
+  int _minCasesCity = 10000, _countBRcities = 0;
   
   PinInformation currentlySelectedPin = PinInformation(pinPath: 'assets/images/pin-country.png', report: {'cases': 0, 'deaths': 0}, locationName: '', labelColor: Colors.grey);
 
@@ -64,7 +64,7 @@ class _MapPageState extends State<MapPage>{
 
     rootBundle.loadString('assets/map-style.txt').then((string) { _mapStyle = string; });    
     _db = await SharedPreferences.getInstance();
-    _minCasesCity = (_db.getInt('minCasesCity') ?? 0);
+    _minCasesCity = (_db.getInt('minCasesCity') ?? 10000);
   }
   
   void goToFavoriteLocation(){
@@ -92,7 +92,7 @@ class _MapPageState extends State<MapPage>{
     });
     setState(() {
       markers = newMarkers;
-      circles = [];
+      //circles = [];
     });
     fetchCsvFile('https://raw.githubusercontent.com/wcota/covid19br/master/cases-gps.csv', 'cases-gps.csv');
 
@@ -346,22 +346,22 @@ class _MapPageState extends State<MapPage>{
             );
           }
 
-          if(int.parse(city[columnTitles.indexOf("total")]) >= 100 && int.parse(city[columnTitles.indexOf("total")]) >= _minCasesCity){
-            double radius = double.parse(city[columnTitles.indexOf("total")].toString()) * 4;
-            if(radius > 40000) radius = 40000;
+          if(int.parse(city[columnTitles.indexOf("total")]) >= 10000 && int.parse(city[columnTitles.indexOf("total")]) >= _minCasesCity){
+            double radius = double.parse(city[columnTitles.indexOf("total")].toString()) * 3;
+            if(radius > 30000) radius = 30000;
             else if(radius > 20000) radius = double.parse(city[columnTitles.indexOf("total")].toString());
-            else if(radius > 10000) radius = double.parse(city[columnTitles.indexOf("total")].toString()) * 2;
+            else if(radius >= 10000) radius = double.parse(city[columnTitles.indexOf("total")].toString()) * 2;
             
-             radius = double.parse(city[columnTitles.indexOf("total")].toString());
+            radius = double.parse(city[columnTitles.indexOf("total")].toString());
 
-            circles.add(Circle(
+            /*circles.add(Circle(
               circleId: CircleId('circle-' + city[columnTitles.indexOf("name")]),
               center: LatLng(double.parse(city[columnTitles.indexOf("lat")].toString()), double.parse(city[columnTitles.indexOf("lon")].toString())),
               radius: radius,
               strokeColor: Color.fromARGB(100, 200, 40, 40),
               fillColor: Color.fromARGB(30, 240, 40, 40),
               strokeWidth: 2,
-            ));
+            ));*/
           }
         }
         count++;
@@ -392,9 +392,10 @@ class _MapPageState extends State<MapPage>{
             long: states[st[columnTitles.indexOf("state")]].longitude,
             pinPath: "assets/images/pin-state.png",
             report: {'cases': formatted(st[columnTitles.indexOf("totalCases")]), 'deaths': infoDeaths, 'recovered': formatted(st[columnTitles.indexOf("recovered")]),
-              'suspects': formatted(st[columnTitles.indexOf("suspects")]), 'tests': formatted(st[columnTitles.indexOf("tests")]),
-              'cases_per100k': st[columnTitles.indexOf("totalCases_per_100k_inhabitants")].toString(),
-              'deaths_per100k': st[columnTitles.indexOf("deaths_per_100k_inhabitants")].toString()
+              //'suspects': formatted(st[columnTitles.indexOf("suspects")]), 'tests': formatted(st[columnTitles.indexOf("tests")]),
+              //'cases_per100k': st[columnTitles.indexOf("totalCases_per_100k_inhabitants")].toString(),
+              //'deaths_per100k': st[columnTitles.indexOf("deaths_per_100k_inhabitants")].toString()
+              'vaccinated': st[columnTitles.indexOf("vaccinated")].toString()
             },
             labelColor: Colors.green[400]
           );
@@ -493,7 +494,7 @@ class _MapPageState extends State<MapPage>{
                 zoom: _currentZoom,
               ),
               markers: Set<Marker>.of(markers),
-              circles: Set<Circle>.of(circles),
+              //circles: Set<Circle>.of(circles),
               onMapCreated: (controller) => _onMapCreated(controller)
             ),
           ),

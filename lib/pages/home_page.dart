@@ -16,7 +16,6 @@ class HomePage extends StatefulWidget {
   final drawerItems = [
     new DrawerItem("Casos de COVID-19 Brasil", Icons.location_on),
     new DrawerItem("Estatísticas", Icons.show_chart),
-    new DrawerItem("Índice de Isolamento", Icons.insert_chart),
     new DrawerItem("Ministério da Saúde", Icons.healing),
     new DrawerItem("Dados Oficiais", Icons.pie_chart),
   ];
@@ -53,7 +52,7 @@ class _HomePageState extends State<HomePage> {
   aboutApp(){
     return showAboutDialog(context: context, applicationName: _packageInfo.appName, applicationVersion: _packageInfo.version, applicationIcon: FlutterLogo(), 
       applicationLegalese: """MIT License
-        Copyright (c) 2020 Gabriel Ranéa Barbosa
+        Copyright (c) 2021 Gabriel Ranéa Barbosa
 
         Permission is hereby granted, free of charge, to any person obtaining a copy
         of this software and associated documentation files (the "Software"), to deal
@@ -87,14 +86,6 @@ class _HomePageState extends State<HomePage> {
       case 1:
         return ChartsPage();
       case 2:
-        return Container(
-          child: WebView(
-            key: Key('statesMapIframe'),
-            initialUrl: Uri.dataFromString('<html><body style="margin: 0; padding: 0;"><iframe style="width:100%;height:100%" src="https://public.tableau.com/views/MKTScoredeisolamentosocial/VisoGeral?:embed=y&:showVizHome=n"></iframe></body></html>', mimeType: 'text/html').toString(),
-            javascriptMode: JavascriptMode.unrestricted
-          )
-        );
-      case 3:
         return (Container(
           child: WebView(
             key: Key('twitterIframe'),
@@ -102,7 +93,7 @@ class _HomePageState extends State<HomePage> {
             javascriptMode: JavascriptMode.unrestricted
           )
         ));
-      case 4:
+      case 3:
         return Container(
           child: WebView(
             key: Key('covidGovIframe'),

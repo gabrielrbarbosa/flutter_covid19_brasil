@@ -76,28 +76,6 @@ class Details extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.start,
             children: <Widget>[
               Radio(
-                value: 1000,
-                groupValue: minCasesCity,
-                onChanged: (value){
-                  this.configMarkers(value);
-                }
-              ),
-              Text(
-                '1000+ Casos',
-                style: Theme.of(context).textTheme.caption,
-              ),
-              Radio(
-                value: 5000,
-                groupValue: minCasesCity,
-                onChanged: (value){
-                  this.configMarkers(value);
-                }
-              ),
-              Text(
-                '5000+',
-                style: Theme.of(context).textTheme.caption,
-              ),
-              Radio(
                 value: 10000,
                 groupValue: minCasesCity,
                 onChanged: (value){
@@ -105,7 +83,29 @@ class Details extends StatelessWidget {
                 }
               ),
               Text(
-                '10000+',
+                '10 mil Casos',
+                style: Theme.of(context).textTheme.caption,
+              ),
+              Radio(
+                value: 50000,
+                groupValue: minCasesCity,
+                onChanged: (value){
+                  this.configMarkers(value);
+                }
+              ),
+              Text(
+                '50 mil',
+                style: Theme.of(context).textTheme.caption,
+              ),
+              Radio(
+                value: 100000,
+                groupValue: minCasesCity,
+                onChanged: (value){
+                  this.configMarkers(value);
+                }
+              ),
+              Text(
+                '100 mil',
                 style: Theme.of(context).textTheme.caption,
               ),
             ]
